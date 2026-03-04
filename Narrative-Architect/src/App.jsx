@@ -53,7 +53,7 @@ export default function App() {
   const [llmUrl, setLlmUrl] = useState('http://localhost:11434/api/chat');
   const [llmModel, setLlmModel] = useState('llama3');
   const [chatHistory, setChatHistory] = useState([
-    { role: 'system', content: 'Facility Overseer Engine Initialized. Awaiting structural analysis parameters.' }
+    { id: crypto.randomUUID(), role: 'system', content: 'Facility Overseer Engine Initialized. Awaiting structural analysis parameters.' }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -132,7 +132,7 @@ export default function App() {
         const importedData = JSON.parse(event.target.result);
         if (Array.isArray(importedData)) {
           setEntities(importedData);
-          setChatHistory(prev => [...prev, { role: 'system', content: '[SYSTEM]: External biological data feed imported successfully.' }]);
+          setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: External biological data feed imported successfully.' }]);
         }
       } catch (err) {
         console.error("Failed to parse backup:", err);
@@ -148,7 +148,7 @@ export default function App() {
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
-    const userMsg = { role: 'user', content: chatInput };
+    const userMsg = { id: crypto.randomUUID(), role: 'user', content: chatInput };
     setChatHistory(prev => [...prev, userMsg]);
     setChatInput('');
     setIsTyping(true);
@@ -183,11 +183,11 @@ export default function App() {
       }
 
       const data = await response.json();
-      setChatHistory(prev => [...prev, { role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
 
     } catch (error) {
       console.error(error);
-      setChatHistory(prev => [...prev, { role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message} (Verify LLM Endpoint and Model Name in configuration).` }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message} (Verify LLM Endpoint and Model Name in configuration).` }]);
     } finally {
       setIsTyping(false);
     }
@@ -440,8 +440,8 @@ export default function App() {
 
         {/* Chat Output */}
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
-          {chatHistory.map((msg, i) => (
-            <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+          {chatHistory.map((msg) => (
+            <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
               <span className={`text-[9px] uppercase tracking-widest mb-1 ${msg.role === 'user' ? 'text-slate-500' : msg.role === 'system' ? 'text-rose-500/50' : 'text-teal-600'}`}>
                 {msg.role === 'user' ? 'Director Input' : msg.role === 'system' ? 'System Status' : 'Overseer Logic'}
               </span>
