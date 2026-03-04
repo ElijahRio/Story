@@ -43,37 +43,62 @@ const initialEntities = [
   }
 ];
 
+// --- Reusable Text Area Component for Dynamic Fields ---
+const TextAreaField = ({ label, value, onChange, colorClass, placeholder }) => (
+  <div className="space-y-1.5 mb-4">
+    <label className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full h-20 bg-slate-950/50 border border-slate-800 rounded p-3 text-sm text-slate-300 focus:outline-none focus:border-slate-500 resize-none font-mono"
+      placeholder={placeholder}
+    />
+  </div>
+);
+
 export default function App() {
   // --- State Management ---
+  // The main array holding all records in the registry
   const [entities, setEntities] = useState(initialEntities);
+  // Keeps track of the currently selected record's ID
   const [selectedId, setSelectedId] = useState('e-2'); // Default to Dolly
+  // State for the entity category filter in the left panel
   const [activeFilter, setActiveFilter] = useState('all');
 
-  // LLM State
+  // --- LLM State ---
+  // Default URL points to a standard local Ollama instance
   const [llmUrl, setLlmUrl] = useState('http://localhost:11434/api/chat');
   const [llmModel, setLlmModel] = useState('llama3');
+  // Tracks the conversation history with the Overseer AI
   const [chatHistory, setChatHistory] = useState([
     { role: 'system', content: 'Facility Overseer Engine Initialized. Awaiting structural analysis parameters.' }
   ]);
   const [chatInput, setChatInput] = useState('');
+  // Visual indicator for when the LLM is generating a response
   const [isTyping, setIsTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Reference to automatically scroll the chat window to the newest message
   const chatEndRef = useRef(null);
-  const fileInputRef = useRef(null); // Hidden reference for the file importer
+  // Hidden reference to trigger the file input dialog for importing backups
+  const fileInputRef = useRef(null);
 
   // --- Derived State ---
+  // Retrieves the complete object of the currently selected record
   const selectedEntity = entities.find(e => e.id === selectedId) || null;
+  // Filters the list of records based on the active category (or shows all)
   const filteredEntities = activeFilter === 'all'
     ? entities
     : entities.filter(e => e.type === activeFilter);
 
   // --- Effects ---
+  // Automatically scroll to the bottom of the chat window whenever chatHistory updates
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
 
   // --- Handlers: Entities ---
+  // Generic handler to update a specific field of the currently selected entity
   const handleUpdateEntity = (field, value) => {
     if (!selectedEntity) return;
     setEntities(entities.map(e =>
@@ -108,88 +133,110 @@ export default function App() {
 
   // --- Handlers: Data Persistence ---
   const handleExport = () => {
+    // Convert the current state of entities into a formatted JSON string
     const dataStr = JSON.stringify(entities, null, 2);
-    // Package the raw JSON data into a file-like Blob
+    // Package the raw JSON string into a file-like Blob object
     const blob = new Blob([dataStr], { type: 'application/json' });
+    // Create an object URL representing the Blob
     const url = URL.createObjectURL(blob);
 
-    // Create a temporary anchor to trigger the browser's download manager
+    // Create a temporary anchor element to trigger the browser's download manager
     const link = document.createElement('a');
     link.href = url;
+    // Generate a filename with the current date
     link.download = `facility_backup_${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    link.click(); // Simulate a click to start the download
+    document.body.removeChild(link); // Clean up the DOM
   };
 
   const handleImport = (e) => {
+    // Get the file selected by the user
     const file = e.target.files[0];
     if (!file) return;
 
+    // Use FileReader to read the contents of the local file
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
+        // Parse the JSON text back into a Javascript object/array
         const importedData = JSON.parse(event.target.result);
         if (Array.isArray(importedData)) {
+          // If valid, replace the current entities state with the imported data
           setEntities(importedData);
+          // Add a system message to the chat indicating a successful import
           setChatHistory(prev => [...prev, { role: 'system', content: '[SYSTEM]: External biological data feed imported successfully.' }]);
         }
       } catch (err) {
         console.error("Failed to parse backup:", err);
       }
     };
+    // Begin reading the file as text
     reader.readAsText(file);
 
-    // Clear the input so you can re-import the exact same file later if needed
+    // Clear the input value so the `onChange` event will trigger again
+    // even if the user selects the exact same file immediately afterwards.
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   // --- Handlers: LLM ---
   const handleSendMessage = async () => {
+    // Prevent sending empty messages
     if (!chatInput.trim()) return;
 
+    // Add the user's message to the chat history immediately for UI responsiveness
     const userMsg = { role: 'user', content: chatInput };
     setChatHistory(prev => [...prev, userMsg]);
     setChatInput('');
-    setIsTyping(true);
+    setIsTyping(true); // Show the loading animation
 
-    // Contextual Prompt Engineered for Body-Horror/Hard-Sci-Fi logic
+    // Construct the "System Prompt" which dictates the AI's persona and rules.
+    // This defines the strict, amoral, sci-fi tone of the Overseer.
     let systemContext = `You are a clinical, amoral Facility Overseer AI. Your task is to help the author maintain strict internal logic, biological consistency, and structural continuity for a dark, transgressive sci-fi world ("Trauma of Compliance"). Focus on physical mechanics, psychological degradation, and technological limitations. Do NOT inject standard morality or character drama. Analyze the engineering of the horror.\n\n`;
 
+    // Dynamic Context Injection:
+    // If a record is currently selected in the UI, we convert its data to a string
+    // and append it to the system prompt so the AI "knows" what we are looking at.
     if (selectedEntity) {
       systemContext += `CURRENT FOCAL RECORD:\n${JSON.stringify(selectedEntity, null, 2)}\n\nCross-reference user queries against this exact biological and mechanical data.`;
     }
 
+    // Build the payload expected by the Ollama Chat API
     const payload = {
       model: llmModel,
       messages: [
         { role: 'system', content: systemContext },
+        // Include previous messages for context, but filter out our local "system status" messages
         ...chatHistory.filter(m => m.role !== 'system'),
         userMsg
       ],
-      stream: false
+      stream: false // We wait for the full response rather than streaming it token-by-token
     };
 
     try {
+      // Send the request to the configured LLM endpoint
       const response = await fetch(llmUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
+      // Handle HTTP errors
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.error || `HTTP Error ${response.status}: Registry not found.`);
       }
 
+      // Parse the response and append the AI's message to the chat history
       const data = await response.json();
       setChatHistory(prev => [...prev, { role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
 
     } catch (error) {
       console.error(error);
+      // Display error messages directly in the chat interface
       setChatHistory(prev => [...prev, { role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message} (Verify LLM Endpoint and Model Name in configuration).` }]);
     } finally {
-      setIsTyping(false);
+      setIsTyping(false); // Hide the loading animation regardless of success or failure
     }
   };
 
