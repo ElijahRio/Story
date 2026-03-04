@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Database, Biohazard, UserCog, UserX, Cpu,
-  Settings, Send, Trash2, Activity, FileWarning, Save,
+  Settings, Send, Trash2, Activity, FileWarning,
   Download, Upload
 } from 'lucide-react';
+import TextAreaField from './components/TextAreaField';
 
 // --- Trauma of Compliance: Core Database ---
 const initialEntities = [
@@ -42,19 +43,6 @@ const initialEntities = [
     environmental_impact: 'Consumes biological matter (e.g., Hanna). Pollutes lower levels of the Sunken District.'
   }
 ];
-
-// --- Reusable Text Area Component for Dynamic Fields ---
-const TextAreaField = ({ label, value, onChange, colorClass, placeholder }) => (
-  <div className="space-y-1.5 mb-4">
-    <label className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full h-20 bg-slate-950/50 border border-slate-800 rounded p-3 text-sm text-slate-300 focus:outline-none focus:border-slate-500 resize-none font-mono"
-      placeholder={placeholder}
-    />
-  </div>
-);
 
 export default function App() {
   // --- State Management ---
@@ -419,15 +407,13 @@ export default function App() {
 
             <div className="flex-1 overflow-y-auto p-8 space-y-6">
               {/* Universal Description Field */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Base Definition / Purpose</label>
-                <textarea
-                  value={selectedEntity.description}
-                  onChange={(e) => handleUpdateEntity('description', e.target.value)}
-                  className="w-full h-20 bg-slate-950/50 border border-slate-800 rounded p-3 text-sm text-slate-300 focus:outline-none focus:border-slate-500 resize-none font-mono"
-                  placeholder="Define the core nature of this entity..."
-                />
-              </div>
+              <TextAreaField
+                label="Base Definition / Purpose"
+                value={selectedEntity.description}
+                onChange={(val) => handleUpdateEntity('description', val)}
+                colorClass="text-slate-400"
+                placeholder="Define the core nature of this entity..."
+              />
 
               {/* Render Type-Specific Fields */}
               <div className="bg-black/20 p-5 rounded-lg border border-slate-800/50 shadow-inner">
