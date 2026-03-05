@@ -537,9 +537,11 @@ You MUST output strictly a JSON object following this exact schema. Do NOT outpu
       const data = await response.json();
       let rawJson = data.message?.content || "{}";
 
-      const jsonMatch = rawJson.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        rawJson = jsonMatch[0];
+      // Attempt to aggressively extract the JSON object block from the response
+      const startIdx = rawJson.indexOf('{');
+      const endIdx = rawJson.lastIndexOf('}');
+      if (startIdx !== -1 && endIdx !== -1 && endIdx >= startIdx) {
+        rawJson = rawJson.substring(startIdx, endIdx + 1);
       } else {
         rawJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
       }
@@ -732,7 +734,15 @@ Each object must follow this schema:
 
       const data = await response.json();
       let rawJson = data.message?.content || "[]";
-      rawJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
+
+      // Attempt to aggressively extract the JSON array block from the response
+      const startIdx = rawJson.indexOf('[');
+      const endIdx = rawJson.lastIndexOf(']');
+      if (startIdx !== -1 && endIdx !== -1 && endIdx >= startIdx) {
+        rawJson = rawJson.substring(startIdx, endIdx + 1);
+      } else {
+        rawJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
+      }
 
       const extractedAudits = JSON.parse(rawJson);
 
