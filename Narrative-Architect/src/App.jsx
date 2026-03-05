@@ -184,7 +184,7 @@ export default function App() {
   const [llmModel, setLlmModel] = useState('llama3');
   const [embedModel, setEmbedModel] = useState('nomic-embed-text');
   const [chatHistory, setChatHistory] = useState([
-    { role: 'system', content: 'Facility Overseer Engine Initialized. Background auto-save is ACTIVE.' }
+    { id: crypto.randomUUID(), role: 'system', content: 'Facility Overseer Engine Initialized. Background auto-save is ACTIVE.' }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -221,7 +221,7 @@ export default function App() {
 
   // --- Advanced Link Detection Engine ---
   const getDetectedLinks = (text, currentId) => {
-    if (!text) return [];
+    if (!text || typeof text !== 'string') return [];
     const lowerText = text.toLowerCase();
 
     return entities.filter(e => {
@@ -309,7 +309,7 @@ export default function App() {
         const importedData = JSON.parse(event.target.result);
         if (Array.isArray(importedData)) {
           setEntities(importedData);
-          setChatHistory(prev => [...prev, { role: 'system', content: '[SYSTEM]: External biological data feed imported successfully.' }]);
+          setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: External biological data feed imported successfully.' }]);
         }
       } catch (err) {
         console.error("Failed to parse backup:", err);
@@ -322,7 +322,7 @@ export default function App() {
   // --- Handlers: LLM Overseer ---
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
-    const userMsg = { role: 'user', content: chatInput };
+    const userMsg = { id: crypto.randomUUID(), role: 'user', content: chatInput };
     setChatHistory(prev => [...prev, userMsg]);
     setChatInput('');
     setIsTyping(true);
@@ -335,7 +335,7 @@ export default function App() {
       } else if (selectedId === 'timeline') {
         systemContext += `CURRENT FOCAL RECORD: The user is currently analyzing the MASTER TIMELINE. \n\nSORTED CHRONOLOGICAL EVENTS:\n${JSON.stringify(timelineEvents, null, 2)}\n\nAnalyze the chronological causality of these events. Hunt for timeline paradoxes (e.g., an asset reacting to an event that hasn't happened yet in the sequence, or biological impossible ages based on birth/death dates).`;
       } else if (entities.length > 0) {
-        setChatHistory(prev => [...prev, { role: 'system', content: '[SYSTEM]: Engaging embedding engine. Vectorizing query for semantic search...' }]);
+        setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: Engaging embedding engine. Vectorizing query for semantic search...' }]);
         const embedUrl = llmUrl.replace('/api/chat', '/api/embed');
 
         const queryRes = await fetch(embedUrl, {
@@ -384,11 +384,11 @@ export default function App() {
       }
 
       const data = await response.json();
-      setChatHistory(prev => [...prev, { role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
 
     } catch (error) {
       console.error(error);
-      setChatHistory(prev => [...prev, { role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message}` }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message}` }]);
     } finally {
       setIsTyping(false);
     }
@@ -405,7 +405,7 @@ export default function App() {
   const handleArchiveMemory = async () => {
     if (isTyping) return;
     setIsTyping(true);
-    setChatHistory(prev => [...prev, { role: 'system', content: '[SYSTEM]: Executing Core Memory Dump. Archiving facility state...' }]);
+    setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: Executing Core Memory Dump. Archiving facility state...' }]);
 
     const systemContext = `You are the Facility Overseer. Execute a CORE MEMORY DUMP. Analyze the entire facility registry and timeline provided below. Summarize your current structural understanding of the narrative, note any persistent logistical bottlenecks, and record your internal logic state. 
     
@@ -436,17 +436,33 @@ You MUST output strictly a JSON object following this exact schema. Do NOT outpu
 
       const data = await response.json();
       let rawJson = data.message?.content || "{}";
-      rawJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
+
+      const jsonMatch = rawJson.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        rawJson = jsonMatch[0];
+      } else {
+        rawJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
+      }
 
       const parsed = JSON.parse(rawJson);
 
       const newId = `e-mem-${Date.now()}`;
+
+      // Ensure fields are strictly converted to strings to prevent crashes on non-string inputs from LLM
+      const safeString = (val) => {
+        if (val === null || val === undefined) return '';
+        if (typeof val === 'string') return val;
+        if (Array.isArray(val)) return val.join(', ');
+        if (typeof val === 'object') return JSON.stringify(val);
+        return String(val);
+      };
+
       const newMemory = {
         id: newId,
         type: 'memory',
-        name: parsed.name || 'Corrupted Core Dump',
-        description: parsed.description || '',
-        unresolved_threads: parsed.unresolved_threads || '',
+        name: parsed.name ? safeString(parsed.name) : 'Corrupted Core Dump',
+        description: parsed.description ? safeString(parsed.description) : '',
+        unresolved_threads: parsed.unresolved_threads ? safeString(parsed.unresolved_threads) : '',
         systemic_inputs: '',
         systemic_outputs: '',
         timestamp: new Date().toLocaleDateString('en-GB').replace(/\//g, '-')
@@ -454,10 +470,10 @@ You MUST output strictly a JSON object following this exact schema. Do NOT outpu
 
       setEntities(prev => [...prev, newMemory]);
       setSelectedId(newId);
-      setChatHistory(prev => [...prev, { role: 'system', content: `[SYSTEM]: Core Dump successful. Memory node '${newMemory.name}' established.` }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM]: Core Dump successful. Memory node '${newMemory.name}' established.` }]);
     } catch (error) {
       console.error(error);
-      setChatHistory(prev => [...prev, { role: 'system', content: `[SYSTEM ERROR]: Core Dump Failure - ${error.message}. Ensure model outputs valid JSON.` }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM ERROR]: Core Dump Failure - ${error.message}. Ensure model outputs valid JSON.` }]);
     } finally {
       setIsTyping(false);
     }
@@ -513,7 +529,7 @@ Each object must strictly follow this schema:
 
       if (Array.isArray(extractedEntities) && extractedEntities.length > 0) {
         setEntities(prev => [...prev, ...extractedEntities]);
-        setChatHistory(prev => [...prev, { role: 'system', content: `[SYSTEM]: Successfully parsed and ingested ${extractedEntities.length} new records from raw transcript.` }]);
+        setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM]: Successfully parsed and ingested ${extractedEntities.length} new records from raw transcript.` }]);
         setShowIngest(false);
         setIngestText('');
       } else {
@@ -521,7 +537,7 @@ Each object must strictly follow this schema:
       }
     } catch (error) {
       console.error(error);
-      setChatHistory(prev => [...prev, { role: 'system', content: `[SYSTEM ERROR]: Ingestion Failure - ${error.message}. Ensure the local model is responding with valid JSON.` }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM ERROR]: Ingestion Failure - ${error.message}. Ensure the local model is responding with valid JSON.` }]);
     } finally {
       setIsIngesting(false);
     }
@@ -529,7 +545,7 @@ Each object must strictly follow this schema:
 
   const handleParadoxScan = async () => {
     if (isTyping) return;
-    const userMsg = { role: 'user', content: 'Initiate a paradox scan. Check the entire registry for any logical anomalies, contradictions, unaddressed biological/mechanical conflicts, SUPPLY CHAIN FAILURES, or CHRONOLOGICAL DISCREPANCIES (e.g. actions occurring before a birth_date or after a death_date) across all recorded entities and events.' };
+    const userMsg = { id: crypto.randomUUID(), role: 'user', content: 'Initiate a paradox scan. Check the entire registry for any logical anomalies, contradictions, unaddressed biological/mechanical conflicts, SUPPLY CHAIN FAILURES, or CHRONOLOGICAL DISCREPANCIES (e.g. actions occurring before a birth_date or after a death_date) across all recorded entities and events.' };
     setChatHistory(prev => [...prev, userMsg]);
     setIsTyping(true);
 
@@ -554,10 +570,10 @@ Each object must strictly follow this schema:
       });
       if (!response.ok) throw new Error(`HTTP Error ${response.status}: Registry not found.`);
       const data = await response.json();
-      setChatHistory(prev => [...prev, { role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
     } catch (error) {
       console.error(error);
-      setChatHistory(prev => [...prev, { role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message}` }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message}` }]);
     } finally {
       setIsTyping(false);
     }
@@ -666,10 +682,10 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
       const analysisText = data.message?.content || "Analysis failed to generate.";
 
       handleUpdateEntity('ai_analysis', analysisText);
-      setChatHistory(prev => [...prev, { role: 'system', content: `[SYSTEM]: Profile Audit completed for ${entity.name}. Dossier updated.` }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM]: Profile Audit completed for ${entity.name}. Dossier updated.` }]);
     } catch (error) {
       console.error(error);
-      setChatHistory(prev => [...prev, { role: 'system', content: `[SYSTEM ERROR]: Profile Audit Failure - ${error.message}` }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM ERROR]: Profile Audit Failure - ${error.message}` }]);
     } finally {
       setIsAuditingProfile(false);
     }
@@ -1175,8 +1191,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-5">
-              {chatHistory.map((msg, i) => (
-                <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+              {chatHistory.map((msg) => (
+                <div key={msg.id || crypto.randomUUID()} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                   <span className={`text-[9px] uppercase tracking-widest mb-1 ${msg.role === 'user' ? 'text-slate-500' : msg.role === 'system' ? 'text-rose-500/50' : 'text-teal-600'}`}>
                     {msg.role === 'user' ? 'Director Input' : msg.role === 'system' ? 'System Status' : 'Overseer Logic'}
                   </span>
