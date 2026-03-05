@@ -327,6 +327,15 @@ export default function App() {
 
         {/* Entity List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+          {/* Global Mode Toggle */}
+          <button
+            onClick={() => setSelectedId(null)}
+            className={`w-full text-left px-3 py-3 mb-2 border-b border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 ${selectedId === null ? 'bg-teal-900/20 text-teal-400 shadow-inner border-teal-800/50' : 'hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
+          >
+            <span className="opacity-80"><Search size={16} /></span>
+            <span className="truncate text-sm font-bold uppercase tracking-wider">Global Facility View</span>
+          </button>
+
           {filteredEntities.map(entity => (
             <button
               key={entity.id}
@@ -423,8 +432,11 @@ export default function App() {
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-slate-600 flex-col gap-4 relative z-10">
-            <Activity size={48} className="opacity-20 animate-pulse" />
-            <p className="font-mono text-sm tracking-widest uppercase">Awaiting Selection</p>
+            <Search size={48} className="opacity-20 text-teal-500" />
+            <div className="text-center">
+              <p className="font-mono text-sm tracking-widest uppercase text-teal-500/70 mb-2">Global View Active</p>
+              <p className="text-xs text-slate-500 max-w-sm">Queries submitted to the Overseer will utilize the Vector Embedding Engine to automatically retrieve and analyze the most mathematically relevant records.</p>
+            </div>
           </div>
         )}
       </div>
@@ -457,7 +469,7 @@ export default function App() {
               />
             </div>
             <div>
-              <label className="block text-slate-500 mb-1">Local Model Engine</label>
+              <label className="block text-slate-500 mb-1">Local Chat Engine</label>
               <input
                 type="text"
                 value={llmModel}
@@ -465,11 +477,33 @@ export default function App() {
                 className="w-full bg-[#0a0a0c] border border-slate-700 rounded px-2 py-1.5 text-slate-300 outline-none focus:border-teal-600 transition-colors"
               />
             </div>
+            <div>
+              <label className="block text-slate-500 mb-1">Vector Embedding Engine</label>
+              <input
+                type="text"
+                value={embedModel}
+                onChange={(e) => setEmbedModel(e.target.value)}
+                className="w-full bg-[#0a0a0c] border border-slate-700 rounded px-2 py-1.5 text-slate-300 outline-none focus:border-teal-600 transition-colors"
+              />
+            </div>
             <div className="text-[10px] text-teal-500/70 p-2 bg-teal-950/20 rounded border border-teal-900/30">
-              System explicitly feeds biological and operational data of the active record into context.
+              System explicitly feeds biological and operational data of the active record into context. Global View utilizes RAG vector isolation.
             </div>
           </div>
         )}
+
+        {/* System Macros */}
+        <div className="px-4 py-2 border-b border-slate-800/60 bg-teal-950/10 flex justify-between items-center shadow-inner">
+          <span className="text-[9px] text-teal-600/70 uppercase tracking-widest font-mono">Macro Diagnostics</span>
+          <button
+            onClick={handleParadoxScan}
+            disabled={isTyping}
+            className="flex items-center gap-1.5 px-2 py-1 bg-teal-900/20 hover:bg-rose-900/30 border border-teal-800/50 hover:border-rose-700/50 rounded text-[9px] text-teal-500 hover:text-rose-400 disabled:opacity-50 disabled:hover:bg-teal-900/20 disabled:hover:border-teal-800/50 disabled:hover:text-teal-500 uppercase tracking-widest transition-colors"
+            title="Scan entire database for contradictions"
+          >
+            <Activity size={10} /> Paradox Scan
+          </button>
+        </div>
 
         {/* Chat Output */}
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
@@ -479,10 +513,10 @@ export default function App() {
                 {msg.role === 'user' ? 'Director Input' : msg.role === 'system' ? 'System Status' : 'Overseer Logic'}
               </span>
               <div className={`p-3 text-[13px] max-w-[92%] leading-relaxed font-mono ${msg.role === 'user'
-                  ? 'bg-slate-800 text-slate-200 rounded-l-lg rounded-tr-lg border border-slate-700'
-                  : msg.role === 'system'
-                    ? 'bg-black text-rose-500/70 text-[10px] border border-rose-900/30 rounded w-full text-center'
-                    : 'bg-teal-950/20 border border-teal-900/40 text-teal-100 rounded-r-lg rounded-tl-lg shadow-sm'
+                ? 'bg-slate-800 text-slate-200 rounded-l-lg rounded-tr-lg border border-slate-700'
+                : msg.role === 'system'
+                  ? 'bg-black text-rose-500/70 text-[10px] border border-rose-900/30 rounded w-full text-center'
+                  : 'bg-teal-950/20 border border-teal-900/40 text-teal-100 rounded-r-lg rounded-tl-lg shadow-sm'
                 }`}>
                 {msg.content}
               </div>
