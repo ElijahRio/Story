@@ -8,6 +8,27 @@ import {
 } from 'lucide-react';
 
 // --- Utility Functions ---
+const safeString = (val) => {
+  if (val === null || val === undefined) return '';
+  if (typeof val === 'string') return val;
+  if (Array.isArray(val)) return val.join(', ');
+  if (typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+};
+
+const sanitizeEntity = (entity) => {
+  if (!entity) return entity;
+  const sanitized = { ...entity };
+  for (const key in sanitized) {
+    if (Object.prototype.hasOwnProperty.call(sanitized, key)) {
+      if (key !== 'id' && key !== 'type') {
+        sanitized[key] = safeString(sanitized[key]);
+      }
+    }
+  }
+  return sanitized;
+};
+
 function calculateCosineSimilarity(vecA, vecB) {
   let dotProduct = 0, normA = 0, normB = 0;
   for (let i = 0; i < vecA.length; i++) {
@@ -21,7 +42,8 @@ function calculateCosineSimilarity(vecA, vecB) {
 
 function parseDateString(dateStr) {
   if (!dateStr) return null;
-  const parts = dateStr.match(/(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})/);
+  const str = safeString(dateStr);
+  const parts = str.match(/(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})/);
   if (parts) {
     if (parts[3].length === 4) {
       return new Date(`${parts[3]}-${parts[2]}-${parts[1]}`);
@@ -29,7 +51,7 @@ function parseDateString(dateStr) {
       return new Date(`${parts[1]}-${parts[2]}-${parts[3]}`);
     }
   }
-  const fb = new Date(dateStr);
+  const fb = new Date(str);
   return isNaN(fb.getTime()) ? null : fb;
 }
 
@@ -165,12 +187,15 @@ export default function App() {
     const saved = localStorage.getItem('facility_registry_data');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsedData = JSON.parse(saved);
+        if (Array.isArray(parsedData)) {
+          return parsedData.map(sanitizeEntity);
+        }
       } catch (e) {
         console.error("Local storage corruption detected. Booting default payload.", e);
       }
     }
-    return initialEntities;
+    return initialEntities.map(sanitizeEntity);
   };
 
   // --- State Management ---
@@ -221,13 +246,14 @@ export default function App() {
 
   // --- Advanced Link Detection Engine ---
   const getDetectedLinks = (text, currentId) => {
-    if (!text || typeof text !== 'string') return [];
-    const lowerText = text.toLowerCase();
+    const safeText = safeString(text);
+    if (!safeText) return [];
+    const lowerText = safeText.toLowerCase();
 
     return entities.filter(e => {
       if (e.id === currentId) return false;
 
-      const fullName = e.name.toLowerCase();
+      const fullName = safeString(e.name).toLowerCase();
       const baseName = fullName.split(' (')[0].trim();
       const strippedName = baseName.replace(/^(the|a|an)\s+/, '');
 
@@ -308,7 +334,7 @@ export default function App() {
       try {
         const importedData = JSON.parse(event.target.result);
         if (Array.isArray(importedData)) {
-          setEntities(importedData);
+          setEntities(importedData.map(sanitizeEntity));
           setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: External biological data feed imported successfully.' }]);
         }
       } catch (err) {
@@ -448,15 +474,6 @@ You MUST output strictly a JSON object following this exact schema. Do NOT outpu
 
       const newId = `e-mem-${Date.now()}`;
 
-      // Ensure fields are strictly converted to strings to prevent crashes on non-string inputs from LLM
-      const safeString = (val) => {
-        if (val === null || val === undefined) return '';
-        if (typeof val === 'string') return val;
-        if (Array.isArray(val)) return val.join(', ');
-        if (typeof val === 'object') return JSON.stringify(val);
-        return String(val);
-      };
-
       const newMemory = {
         id: newId,
         type: 'memory',
@@ -528,7 +545,7 @@ Each object must strictly follow this schema:
       const extractedEntities = JSON.parse(rawJson);
 
       if (Array.isArray(extractedEntities) && extractedEntities.length > 0) {
-        setEntities(prev => [...prev, ...extractedEntities]);
+        setEntities(prev => [...prev, ...extractedEntities.map(sanitizeEntity)]);
         setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM]: Successfully parsed and ingested ${extractedEntities.length} new records from raw transcript.` }]);
         setShowIngest(false);
         setIngestText('');
@@ -961,13 +978,16 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               ) : (
                 <div className="space-y-12">
                   {timelineEvents.map((event) => {
-                    const involvedNames = event.involved_records ? event.involved_records.split(',').map(s => s.trim()) : [];
+                    const safeRecords = safeString(event.involved_records);
+                    const involvedNames = safeRecords ? safeRecords.split(',').map(s => s.trim()) : [];
                     const renderedTags = involvedNames.map((name, idx) => {
-                      const foundEntity = entities.find(e =>
-                        e.name.toLowerCase() === name.toLowerCase() ||
-                        e.name.toLowerCase().includes(name.toLowerCase()) ||
-                        name.toLowerCase().includes(e.name.toLowerCase())
-                      );
+                      const lowerName = name.toLowerCase();
+                      const foundEntity = entities.find(e => {
+                        const entityNameLower = safeString(e.name).toLowerCase();
+                        return entityNameLower === lowerName ||
+                               entityNameLower.includes(lowerName) ||
+                               lowerName.includes(entityNameLower);
+                      });
 
                       let ageText = "";
                       let deathWarning = false;
