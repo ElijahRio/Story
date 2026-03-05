@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Database, Biohazard, UserCog, UserX, Cpu,
   Settings, Send, Trash2, Activity, FileWarning,
-  Download, Upload
+  Download, Upload, Search
 } from 'lucide-react';
 import TextAreaField from './components/TextAreaField';
 
@@ -57,6 +57,7 @@ export default function App() {
   // Default URL points to a standard local Ollama instance
   const [llmUrl, setLlmUrl] = useState('http://localhost:11434/api/chat');
   const [llmModel, setLlmModel] = useState('llama3');
+  const [embedModel, setEmbedModel] = useState('nomic-embed-text');
   // Tracks the conversation history with the Overseer AI
   const [chatHistory, setChatHistory] = useState([
     { role: 'system', content: 'Facility Overseer Engine Initialized. Awaiting structural analysis parameters.' }
@@ -232,6 +233,61 @@ export default function App() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleParadoxScan = async () => {
+    // Prevent sending empty messages
+    if (isTyping) return;
+
+    // Add the user's message to the chat history immediately for UI responsiveness
+    const userMsg = { role: 'user', content: 'Initiate a paradox scan. Check the entire registry for any logical anomalies, contradictions, or unaddressed biological/mechanical conflicts across all recorded entities.' };
+    setChatHistory(prev => [...prev, userMsg]);
+    setIsTyping(true); // Show the loading animation
+
+    // Construct the "System Prompt" which dictates the AI's persona and rules.
+    let systemContext = `You are a clinical, amoral Facility Overseer AI. Your task is to help the author maintain strict internal logic, biological consistency, and structural continuity for a dark, transgressive sci-fi world ("Trauma of Compliance"). Focus on physical mechanics, psychological degradation, and technological limitations. Do NOT inject standard morality or character drama. Analyze the engineering of the horror.\n\n`;
+
+    // Dynamic Context Injection:
+    // Feed ALL records into the context to search for paradoxes.
+    systemContext += `ENTIRE FACILITY REGISTRY DATABASE:\n${JSON.stringify(entities, null, 2)}\n\nCross-reference the entire database to identify contradictions, paradoxes, or unaddressed logical flaws. Provide a clinical report of any anomalies found.`;
+
+    // Build the payload expected by the Ollama Chat API
+    const payload = {
+      model: llmModel,
+      messages: [
+        { role: 'system', content: systemContext },
+        // Include previous messages for context, but filter out our local "system status" messages
+        ...chatHistory.filter(m => m.role !== 'system'),
+        userMsg
+      ],
+      stream: false // We wait for the full response rather than streaming it token-by-token
+    };
+
+    try {
+      // Send the request to the configured LLM endpoint
+      const response = await fetch(llmUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      // Handle HTTP errors
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP Error ${response.status}: Registry not found.`);
+      }
+
+      // Parse the response and append the AI's message to the chat history
+      const data = await response.json();
+      setChatHistory(prev => [...prev, { role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
+
+    } catch (error) {
+      console.error(error);
+      // Display error messages directly in the chat interface
+      setChatHistory(prev => [...prev, { role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message} (Verify LLM Endpoint and Model Name in configuration).` }]);
+    } finally {
+      setIsTyping(false); // Hide the loading animation regardless of success or failure
     }
   };
 
