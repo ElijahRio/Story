@@ -1005,8 +1005,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                       const foundEntity = entities.find(e => {
                         const entityNameLower = safeString(e.name).toLowerCase();
                         return entityNameLower === lowerName ||
-                               entityNameLower.includes(lowerName) ||
-                               lowerName.includes(entityNameLower);
+                          entityNameLower.includes(lowerName) ||
+                          lowerName.includes(entityNameLower);
                       });
 
                       let ageText = "";
@@ -1081,14 +1081,48 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => deleteEntity(selectedEntity.id)}
-                className="p-2 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded transition-colors ml-4"
-                title="Purge Record"
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="flex items-center gap-2 ml-4">
+                <button
+                  onClick={() => setShowMergeUI(!showMergeUI)}
+                  className={`p-2 rounded transition-colors ${showMergeUI ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-600 hover:text-indigo-400 hover:bg-indigo-400/10'}`}
+                  title="Merge Record"
+                >
+                  <GitMerge size={16} />
+                </button>
+                <button
+                  onClick={() => deleteEntity(selectedEntity.id)}
+                  className="p-2 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded transition-colors"
+                  title="Purge Record"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
+
+            {/* Merge Dropdown UI */}
+            {showMergeUI && (
+              <div className="bg-indigo-950/20 border-b border-indigo-900/50 p-3 flex items-center gap-3">
+                <GitMerge size={14} className="text-indigo-400" />
+                <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">Merge Into:</span>
+                <select
+                  value={mergeTargetId}
+                  onChange={(e) => setMergeTargetId(e.target.value)}
+                  className="flex-1 bg-[#0a0a0c] border border-indigo-900/50 rounded p-1.5 text-xs text-slate-300 outline-none focus:border-indigo-500 font-mono"
+                >
+                  <option value="">Select target record to keep...</option>
+                  {entities.filter(e => e.id !== selectedEntity.id && e.type === selectedEntity.type).map(e => (
+                    <option key={e.id} value={e.id}>{e.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => handleMerge(selectedEntity.id, mergeTargetId)}
+                  disabled={!mergeTargetId}
+                  className="px-4 py-1.5 bg-indigo-900/40 hover:bg-indigo-800/60 disabled:opacity-50 disabled:hover:bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-[9px] uppercase tracking-widest rounded transition-colors"
+                >
+                  Confirm Merge
+                </button>
+              </div>
+            )}
 
             <div className="flex-1 overflow-y-auto p-8 space-y-6">
               <TextAreaField
