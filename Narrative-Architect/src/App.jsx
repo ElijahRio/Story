@@ -1,10 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Database, Biohazard, UserCog, UserX, Cpu,
   Settings, Send, Trash2, Activity, FileWarning,
   Download, Upload, Search
 } from 'lucide-react';
 import TextAreaField from './components/TextAreaField';
+
+// --- Utility Functions ---
+/**
+ * Calculates the cosine similarity between two vectors.
+ * Useful for determining semantic closeness of two embeddings.
+ */
+function calculateCosineSimilarity(vecA, vecB) {
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < vecA.length; i++) {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
 
 // --- Trauma of Compliance: Core Database ---
 const initialEntities = [
@@ -73,12 +91,19 @@ export default function App() {
   const fileInputRef = useRef(null);
 
   // --- Derived State ---
-  // Retrieves the complete object of the currently selected record
-  const selectedEntity = entities.find(e => e.id === selectedId) || null;
-  // Filters the list of records based on the active category (or shows all)
-  const filteredEntities = activeFilter === 'all'
-    ? entities
-    : entities.filter(e => e.type === activeFilter);
+  // Retrieves the complete object of the currently selected record.
+  // useMemo prevents O(N) array search on every keystroke when typing in the chat or updating unrelated state.
+  const selectedEntity = useMemo(() =>
+    entities.find(e => e.id === selectedId) || null
+  , [entities, selectedId]);
+
+  // Filters the list of records based on the active category (or shows all).
+  // useMemo prevents O(N) array filtering on every unrelated re-render.
+  const filteredEntities = useMemo(() =>
+    activeFilter === 'all'
+      ? entities
+      : entities.filter(e => e.type === activeFilter)
+  , [entities, activeFilter]);
 
   // --- Effects ---
   // Automatically scroll to the bottom of the chat window whenever chatHistory updates
