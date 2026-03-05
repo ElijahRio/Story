@@ -95,7 +95,7 @@ export default function App() {
   // useMemo prevents O(N) array search on every keystroke when typing in the chat or updating unrelated state.
   const selectedEntity = useMemo(() =>
     entities.find(e => e.id === selectedId) || null
-  , [entities, selectedId]);
+    , [entities, selectedId]);
 
   // Filters the list of records based on the active category (or shows all).
   // useMemo prevents O(N) array filtering on every unrelated re-render.
@@ -103,7 +103,7 @@ export default function App() {
     activeFilter === 'all'
       ? entities
       : entities.filter(e => e.type === activeFilter)
-  , [entities, activeFilter]);
+    , [entities, activeFilter]);
 
   // --- Effects ---
   // Automatically scroll to the bottom of the chat window whenever chatHistory updates
@@ -684,6 +684,51 @@ export default function App() {
           <p className="text-[9px] text-slate-600 text-center mt-2 font-mono uppercase tracking-widest">Shift+Enter for newline</p>
         </div>
       </div>
+
+      {/* INGESTION MODAL OVERLAY */}
+      {showIngest && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-8">
+          <div className="bg-[#0f1115] border border-slate-800 shadow-2xl rounded-lg w-full max-w-3xl flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-slate-800/60 flex items-center justify-between bg-black/20">
+              <div className="flex items-center gap-2 font-bold text-teal-600 text-sm tracking-wide uppercase">
+                <Database size={16} />
+                <span>Raw Transcript Ingestion Terminal</span>
+              </div>
+              <button onClick={() => setShowIngest(false)} className="text-slate-500 hover:text-rose-500 transition-colors">
+                <Trash2 size={16} />
+              </button>
+            </div>
+
+            <div className="p-6 flex-1 flex flex-col gap-4 overflow-hidden">
+              <p className="text-xs text-slate-400 font-mono">
+                Paste raw text from the "Trauma of Compliance" document below. The extraction algorithm will automatically map Assets, Personnel, Tech, and Anomalies, deduce their logistical Inputs/Outputs, and append them to the Registry.
+              </p>
+              <textarea
+                value={ingestText}
+                onChange={(e) => setIngestText(e.target.value)}
+                placeholder="Paste raw PDF transcript here..."
+                className="flex-1 w-full bg-[#0a0a0c] border border-slate-800 rounded p-4 text-sm text-slate-300 focus:outline-none focus:border-teal-600 resize-none font-mono shadow-inner"
+              />
+            </div>
+
+            <div className="p-4 border-t border-slate-800/60 bg-black/20 flex justify-end gap-3">
+              <button
+                onClick={() => setShowIngest(false)}
+                className="px-4 py-2 border border-slate-700 rounded text-xs uppercase tracking-widest text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                Abort
+              </button>
+              <button
+                onClick={handleIngestRawText}
+                disabled={isIngesting || !ingestText.trim()}
+                className="flex items-center gap-2 px-6 py-2 bg-teal-900/40 hover:bg-teal-800/60 border border-teal-700 rounded text-xs uppercase tracking-widest text-teal-400 hover:text-teal-300 disabled:opacity-50 transition-colors"
+              >
+                {isIngesting ? <><Activity size={14} className="animate-pulse" /> Processing...</> : 'Initialize Extraction'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
