@@ -180,29 +180,58 @@ export default function App() {
     setIsTyping(true); // Show the loading animation
 
     // Construct the "System Prompt" which dictates the AI's persona and rules.
-    // This defines the strict, amoral, sci-fi tone of the Overseer.
-    let systemContext = `You are a clinical, amoral Facility Overseer AI. Your task is to help the author maintain strict internal logic, biological consistency, and structural continuity for a dark, transgressive sci-fi world ("Trauma of Compliance"). Focus on physical mechanics, psychological degradation, and technological limitations. Do NOT inject standard morality or character drama. Analyze the engineering of the horror.\n\n`;
-
-    // Dynamic Context Injection:
-    // If a record is currently selected in the UI, we convert its data to a string
-    // and append it to the system prompt so the AI "knows" what we are looking at.
-    if (selectedEntity) {
-      systemContext += `CURRENT FOCAL RECORD:\n${JSON.stringify(selectedEntity, null, 2)}\n\nCross-reference user queries against this exact biological and mechanical data.`;
-    }
-
-    // Build the payload expected by the Ollama Chat API
-    const payload = {
-      model: llmModel,
-      messages: [
-        { role: 'system', content: systemContext },
-        // Include previous messages for context, but filter out our local "system status" messages
-        ...chatHistory.filter(m => m.role !== 'system'),
-        userMsg
-      ],
-      stream: false // We wait for the full response rather than streaming it token-by-token
-    };
+    let systemContext = `You are a clinical, amoral Facility Overseer AI. Your task is to help the author maintain strict internal logic, biological consistency, and structural continuity for a dark, transgressive sci-fi world ("Trauma of Compliance"). Focus on physical mechanics, psychological degradation, technological limitations, and LOGISTICAL SUPPLY CHAINS. Do NOT inject standard morality or character drama. Analyze the engineering of the horror.\n\n`;
 
     try {
+      if (selectedEntity) {
+        // Direct Context Mode: User is looking directly at an entity.
+        systemContext += `CURRENT FOCAL RECORD:\n${JSON.stringify(selectedEntity, null, 2)}\n\nCross-reference user queries against this exact biological and mechanical data, paying special attention to its Systemic Inputs and Outputs.`;
+      } else if (entities.length > 0) {
+        // Vector Search (RAG) Mode: User is in Global View.
+        setChatHistory(prev => [...prev, { role: 'system', content: '[SYSTEM]: Engaging embedding engine. Vectorizing query for semantic search...' }]);
+
+        const embedUrl = llmUrl.replace('/api/chat', '/api/embed');
+
+        // 1. Vectorize the User Query
+        const queryRes = await fetch(embedUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: embedModel, input: userMsg.content })
+        });
+        if (!queryRes.ok) throw new Error("Embedding Engine Offline. Ensure 'nomic-embed-text' is installed.");
+        const queryData = await queryRes.json();
+        const queryVector = queryData.embeddings[0];
+
+        // 2. Vectorize the Database (Batch processing)
+        const entityTexts = entities.map(e => JSON.stringify(e));
+        const batchRes = await fetch(embedUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: embedModel, input: entityTexts })
+        });
+        const batchData = await batchRes.json();
+
+        // 3. Mathematical Scoring & Sorting
+        const scoredEntities = entities.map((entity, index) => ({
+          entity,
+          score: calculateCosineSimilarity(queryVector, batchData.embeddings[index])
+        })).sort((a, b) => b.score - a.score);
+
+        // 4. Inject only the top 2 highest-scoring assets
+        const topMatches = scoredEntities.slice(0, 2).map(match => match.entity);
+        systemContext += `[VECTOR RETRIEVAL ACTIVE] - To prevent context overload, the system has isolated the 2 most mathematically relevant records to the user's query:\n${JSON.stringify(topMatches, null, 2)}\n\nBase your clinical analysis strictly on these isolated records.`;
+      }
+
+      // Build the payload expected by the Ollama Chat API
+      const payload = {
+        model: llmModel,
+        messages: [
+          { role: 'system', content: systemContext },
+          // Include previous messages for context, but filter out our local "system status" messages
+          ...chatHistory.filter(m => m.role !== 'system'),
+          userMsg
+        ],
+        stream: false // We wait for the full response rather than streaming it token-by-token
+      };
+
       // Send the request to the configured LLM endpoint
       const response = await fetch(llmUrl, {
         method: 'POST',
@@ -241,16 +270,16 @@ export default function App() {
     if (isTyping) return;
 
     // Add the user's message to the chat history immediately for UI responsiveness
-    const userMsg = { role: 'user', content: 'Initiate a paradox scan. Check the entire registry for any logical anomalies, contradictions, or unaddressed biological/mechanical conflicts across all recorded entities.' };
+    const userMsg = { role: 'user', content: 'Initiate a paradox scan. Check the entire registry for any logical anomalies, contradictions, unaddressed biological/mechanical conflicts, or SUPPLY CHAIN FAILURES across all recorded entities.' };
     setChatHistory(prev => [...prev, userMsg]);
     setIsTyping(true); // Show the loading animation
 
     // Construct the "System Prompt" which dictates the AI's persona and rules.
-    let systemContext = `You are a clinical, amoral Facility Overseer AI. Your task is to help the author maintain strict internal logic, biological consistency, and structural continuity for a dark, transgressive sci-fi world ("Trauma of Compliance"). Focus on physical mechanics, psychological degradation, and technological limitations. Do NOT inject standard morality or character drama. Analyze the engineering of the horror.\n\n`;
+    let systemContext = `You are a clinical, amoral Facility Overseer AI. Your task is to help the author maintain strict internal logic, biological consistency, and structural continuity for a dark, transgressive sci-fi world ("Trauma of Compliance"). Focus on physical mechanics, psychological degradation, technological limitations, and LOGISTICAL SUPPLY CHAINS. Do NOT inject standard morality or character drama. Analyze the engineering of the horror.\n\n`;
 
     // Dynamic Context Injection:
     // Feed ALL records into the context to search for paradoxes.
-    systemContext += `ENTIRE FACILITY REGISTRY DATABASE:\n${JSON.stringify(entities, null, 2)}\n\nCross-reference the entire database to identify contradictions, paradoxes, or unaddressed logical flaws. Provide a clinical report of any anomalies found.`;
+    systemContext += `ENTIRE FACILITY REGISTRY DATABASE:\n${JSON.stringify(entities, null, 2)}\n\nCross-reference the entire database to identify contradictions, paradoxes, SUPPLY CHAIN FAILURES (where an entity lacks its 'Required Inputs' or produces unmanaged 'Systemic Outputs'), or unaddressed logical flaws. Provide a clinical, numbered report of any systemic bottlenecks found.`;
 
     // Build the payload expected by the Ollama Chat API
     const payload = {
@@ -479,6 +508,24 @@ export default function App() {
                 colorClass="text-slate-400"
                 placeholder="Define the core nature of this entity..."
               />
+
+              {/* Logistical Supply Chain Fields */}
+              <div className="grid grid-cols-2 gap-4 bg-slate-900/40 p-4 rounded-lg border border-slate-800/80">
+                <TextAreaField
+                  label="Required Inputs (Dependencies)"
+                  value={selectedEntity.systemic_inputs}
+                  onChange={(val) => handleUpdateEntity('systemic_inputs', val)}
+                  colorClass="text-indigo-400"
+                  placeholder="Materials, tech, or biological fuel required to function..."
+                />
+                <TextAreaField
+                  label="Systemic Outputs (Yield & Byproduct)"
+                  value={selectedEntity.systemic_outputs}
+                  onChange={(val) => handleUpdateEntity('systemic_outputs', val)}
+                  colorClass="text-emerald-400"
+                  placeholder="What this produces, excretes, or forces into the system..."
+                />
+              </div>
 
               {/* Render Type-Specific Fields */}
               <div className="bg-black/20 p-5 rounded-lg border border-slate-800/50 shadow-inner">
