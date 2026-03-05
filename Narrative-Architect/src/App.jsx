@@ -248,26 +248,37 @@ export default function App() {
     entities.filter(e => e.type === 'event').sort((a, b) => (Number(a.sequence_number) || 0) - (Number(b.sequence_number) || 0))
     , [entities]);
 
+  // Pre-compile RegExp matchers to optimize the Advanced Link Detection Engine.
+  // RegExp compilation inside the render loop was identified as a major performance bottleneck.
+  const entityLinkDictionary = useMemo(() => {
+    const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return entities.map(e => {
+      const fullName = safeString(e.name).toLowerCase();
+      const baseName = fullName.split(' (')[0].trim();
+      const strippedName = baseName.replace(/^(the|a|an)\s+/, '');
+
+      return {
+        ...e,
+        matchFullName: new RegExp(`\\b${escapeRegExp(fullName)}\\b`, 'i'),
+        matchBaseName: baseName.length > 2 ? new RegExp(`\\b${escapeRegExp(baseName)}\\b`, 'i') : null,
+        matchStrippedName: strippedName.length > 2 ? new RegExp(`\\b${escapeRegExp(strippedName)}\\b`, 'i') : null,
+      };
+    });
+  }, [entities]);
+
   // --- Advanced Link Detection Engine ---
   const getDetectedLinks = (text, currentId) => {
     const safeText = safeString(text);
     if (!safeText) return [];
     const lowerText = safeText.toLowerCase();
 
-    return entities.filter(e => {
+    // ⚡ Bolt: Use the memoized entity dictionary to skip RegExp instantiation during rendering.
+    return entityLinkDictionary.filter(e => {
       if (e.id === currentId) return false;
 
-      const fullName = safeString(e.name).toLowerCase();
-      const baseName = fullName.split(' (')[0].trim();
-      const strippedName = baseName.replace(/^(the|a|an)\s+/, '');
-
-      const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-      const matchFullName = new RegExp(`\\b${escapeRegExp(fullName)}\\b`, 'i').test(lowerText);
-      const matchBaseName = baseName.length > 2 && new RegExp(`\\b${escapeRegExp(baseName)}\\b`, 'i').test(lowerText);
-      const matchStrippedName = strippedName.length > 2 && new RegExp(`\\b${escapeRegExp(strippedName)}\\b`, 'i').test(lowerText);
-
-      return matchFullName || matchBaseName || matchStrippedName;
+      return e.matchFullName.test(lowerText) ||
+             (e.matchBaseName && e.matchBaseName.test(lowerText)) ||
+             (e.matchStrippedName && e.matchStrippedName.test(lowerText));
     });
   };
 
