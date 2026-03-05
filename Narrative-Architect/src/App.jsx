@@ -540,9 +540,29 @@ Each object must strictly follow this schema:
 
       const data = await response.json();
       let rawJson = data.message?.content || "[]";
-      rawJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
 
-      const extractedEntities = JSON.parse(rawJson);
+      let extractedEntities = null;
+
+      const arrayMatch = rawJson.match(/\[[\s\S]*\]/);
+      const objectMatch = rawJson.match(/\{[\s\S]*\}/);
+
+      try {
+        if (arrayMatch) {
+          extractedEntities = JSON.parse(arrayMatch[0]);
+        } else if (objectMatch) {
+          extractedEntities = JSON.parse(objectMatch[0]);
+        } else {
+          rawJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
+          extractedEntities = JSON.parse(rawJson);
+        }
+      } catch (parseError) {
+        rawJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
+        extractedEntities = JSON.parse(rawJson);
+      }
+
+      if (extractedEntities && !Array.isArray(extractedEntities)) {
+        extractedEntities = [extractedEntities];
+      }
 
       if (Array.isArray(extractedEntities) && extractedEntities.length > 0) {
         setEntities(prev => [...prev, ...extractedEntities.map(sanitizeEntity)]);
