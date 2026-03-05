@@ -167,7 +167,7 @@ export default function App() {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        console.error("Local storage corruption detected. Booting default payload.");
+        console.error("Local storage corruption detected. Booting default payload.", e);
       }
     }
     return initialEntities;
@@ -177,6 +177,7 @@ export default function App() {
   const [entities, setEntities] = useState(loadSavedData);
   const [selectedId, setSelectedId] = useState('timeline');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [showBackupWarning, _setShowBackupWarning] = useState(false);
 
   // --- LLM State ---
   const [llmUrl, setLlmUrl] = useState('http://localhost:11434/api/chat');
