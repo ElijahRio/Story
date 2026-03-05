@@ -2,15 +2,14 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Database, Biohazard, UserCog, UserX, Cpu,
   Settings, Send, Trash2, Activity, FileWarning,
-  Download, Upload, Search, Clock, GitCommit
+  Download, Upload, Search, Clock, GitCommit,
+  Bug, CheckCircle, AlertTriangle, Bell, Calendar,
+  CornerDownRight, Fingerprint, HardDrive, BrainCircuit
 } from 'lucide-react';
-import TextAreaField from './components/TextAreaField';
 
 // --- Utility Functions ---
 function calculateCosineSimilarity(vecA, vecB) {
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
+  let dotProduct = 0, normA = 0, normB = 0;
   for (let i = 0; i < vecA.length; i++) {
     dotProduct += vecA[i] * vecB[i];
     normA += vecA[i] * vecA[i];
@@ -20,6 +19,74 @@ function calculateCosineSimilarity(vecA, vecB) {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
+function parseDateString(dateStr) {
+  if (!dateStr) return null;
+  const parts = dateStr.match(/(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})/);
+  if (parts) {
+    if (parts[3].length === 4) {
+      return new Date(`${parts[3]}-${parts[2]}-${parts[1]}`);
+    } else if (parts[1].length === 4) {
+      return new Date(`${parts[1]}-${parts[2]}-${parts[3]}`);
+    }
+  }
+  const fb = new Date(dateStr);
+  return isNaN(fb.getTime()) ? null : fb;
+}
+
+function getAge(birthStr, eventStr) {
+  const b = parseDateString(birthStr);
+  const e = parseDateString(eventStr);
+  if (!b || !e) return null;
+  let age = e.getFullYear() - b.getFullYear();
+  const m = e.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && e.getDate() < b.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+// --- UI Components ---
+const InputField = ({ label, value, onChange, colorClass, placeholder }) => (
+  <div className="space-y-1.5 flex-1">
+    <label className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
+    <input
+      type="text"
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-slate-500 font-mono shadow-inner"
+      placeholder={placeholder}
+    />
+  </div>
+);
+
+const TextAreaField = ({ label, value, onChange, colorClass, placeholder, detectedLinks, onNavigate }) => (
+  <div className="space-y-1.5 flex-1 flex flex-col">
+    <label className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
+    <textarea
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full h-28 bg-slate-950/50 border border-slate-800 rounded p-3 text-sm text-slate-300 focus:outline-none focus:border-slate-500 resize-none font-mono leading-relaxed shadow-inner"
+      placeholder={placeholder}
+    />
+
+    {/* Dynamic Link Rendering - The Conveyor Belts */}
+    {detectedLinks && detectedLinks.length > 0 && (
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        {detectedLinks.map(link => (
+          <button
+            key={link.id}
+            onClick={() => onNavigate(link.id)}
+            className="text-[9px] uppercase tracking-widest px-2 py-1 bg-teal-950/20 hover:bg-teal-900/40 text-teal-500 hover:text-teal-400 border border-teal-900/50 hover:border-teal-700 rounded flex items-center gap-1 font-mono transition-colors shadow-sm"
+            title={`Maps to ${link.name}`}
+          >
+            <CornerDownRight size={10} /> {link.name}
+          </button>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
 // --- Trauma of Compliance: Core Database ---
 const initialEntities = [
   {
@@ -27,22 +94,28 @@ const initialEntities = [
     type: 'personnel',
     name: 'Ancillus',
     description: 'Lead Creator/Director of the Facility. Operates on a strict transactional and clinical morality system.',
+    birth_date: '22-04-1980',
+    death_date: '',
     systemic_inputs: 'Unrestricted Facility Access, Client Capital, Raw Biological Donors.',
     systemic_outputs: 'Facility Directives, Compound S12 Authorization, Structural Parameters.',
     attributes: 'Immaculate presentation, detached empathy, highly intelligent.',
     ulterior_motives: 'To construct perfect biological compliance and transcend physical limitations. Seeks to rectify perceived inadequacies pointed out by his father.',
-    liabilities: 'Hubris regarding his control over the "Ghost Variable" (Soul/Consciousness).'
+    liabilities: 'Hubris regarding his control over the "Ghost Variable" (Soul/Consciousness).',
+    ai_analysis: ''
   },
   {
     id: 'e-2',
     type: 'asset',
     name: 'Dolly (Asteria)',
     description: 'High-Value Asset. A unique biological construct heavily modified for client rental and compliance.',
+    birth_date: '15-08-2012',
+    death_date: '',
     systemic_inputs: 'Compound S12, Judas Eye V3 Optical Feedback, Regular physical maintenance.',
     systemic_outputs: 'Client Capital (Rental Fees), 99.8% Compliance Metric, Unfiltered Psychological Trauma.',
     biological_alterations: 'Subcutaneous Judas Eye V3 (Right Eye), Frictionless Follicles, Compound S12 (Dissolution of rigid frameworks), Synthetic biological rendering.',
     compliance_metric: '99.8% (Target). Oscillates violently due to extreme psychological fracturing and the "Ghost Variable".',
-    degradation_status: 'Severe psychological fracturing resulting in hallucinations (Memory Blends, The Dark Shadow, The Fawn). Frequent physical trauma.'
+    degradation_status: 'Severe psychological fracturing resulting in hallucinations (Memory Blends, The Dark Shadow, The Fawn). Frequent physical trauma.',
+    ai_analysis: ''
   },
   {
     id: 'e-3',
@@ -70,7 +143,7 @@ const initialEntities = [
     name: 'Judas Eye V1 Catastrophe',
     description: 'Initial deployment of the Judas Eye compliance tool resulted in violent biological rejection. The host body attempted to physically assimilate the hardware, leading to terminal cascading organ failure.',
     sequence_number: '10',
-    timestamp: 'Cycle 442',
+    timestamp: '05-03-2026',
     involved_records: 'Ancillus, Prototype Asset #4, The Judas Eye (V1)',
     systemic_impact: 'Led to the development of the corrosive tamper-defense mechanism in V2 and V3. Remains of Prototype #4 deposited into the Sepsis Stream.'
   },
@@ -80,16 +153,28 @@ const initialEntities = [
     name: 'Integration of Compound S12',
     description: 'First successful administration of Compound S12 into Asset Dolly. Achieved initial dissolution of rigid skeletal/psychological frameworks, enabling hyper-compliance.',
     sequence_number: '20',
-    timestamp: 'Cycle 510',
+    timestamp: '12-11-2026',
     involved_records: 'Ancillus, Dolly (Asteria), Compound S12',
     systemic_impact: 'Compliance Metric stabilized at 99.8%. First recorded instance of Dolly experiencing "Memory Blends".'
   }
 ];
 
 export default function App() {
+  // --- Persistent Local Storage System ---
+  const loadSavedData = () => {
+    const saved = localStorage.getItem('facility_registry_data');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Local storage corruption detected. Booting default payload.");
+      }
+    }
+    return initialEntities;
+  };
+
   // --- State Management ---
-  const [entities, setEntities] = useState(initialEntities);
-  // selectedId can now be a specific ID, null (Global), or 'timeline' (Chronological)
+  const [entities, setEntities] = useState(loadSavedData);
   const [selectedId, setSelectedId] = useState('timeline');
   const [activeFilter, setActiveFilter] = useState('all');
 
@@ -98,16 +183,22 @@ export default function App() {
   const [llmModel, setLlmModel] = useState('llama3');
   const [embedModel, setEmbedModel] = useState('nomic-embed-text');
   const [chatHistory, setChatHistory] = useState([
-    { role: 'system', content: 'Facility Overseer Engine Initialized. Awaiting structural analysis parameters.' }
+    { role: 'system', content: 'Facility Overseer Engine Initialized. Background auto-save is ACTIVE.' }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Ingestion Modal State
+  // Overseer Logic State
+  const [activeOverseerTab, setActiveOverseerTab] = useState('terminal');
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [isAuditing, setIsAuditing] = useState(false);
+
+  // Ingestion & Audit State
   const [showIngest, setShowIngest] = useState(false);
   const [ingestText, setIngestText] = useState('');
   const [isIngesting, setIsIngesting] = useState(false);
+  const [isAuditingProfile, setIsAuditingProfile] = useState(false);
 
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -123,15 +214,41 @@ export default function App() {
       : entities.filter(e => e.type === activeFilter)
     , [entities, activeFilter]);
 
-  // Sort events mathematically by their sequence integer for the Timeline View
   const timelineEvents = useMemo(() =>
     entities.filter(e => e.type === 'event').sort((a, b) => (Number(a.sequence_number) || 0) - (Number(b.sequence_number) || 0))
     , [entities]);
+
+  // --- Advanced Link Detection Engine ---
+  const getDetectedLinks = (text, currentId) => {
+    if (!text) return [];
+    const lowerText = text.toLowerCase();
+
+    return entities.filter(e => {
+      if (e.id === currentId) return false;
+
+      const fullName = e.name.toLowerCase();
+      const baseName = fullName.split(' (')[0].trim();
+      const strippedName = baseName.replace(/^(the|a|an)\s+/, '');
+
+      const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      const matchFullName = new RegExp(`\\b${escapeRegExp(fullName)}\\b`, 'i').test(lowerText);
+      const matchBaseName = baseName.length > 2 && new RegExp(`\\b${escapeRegExp(baseName)}\\b`, 'i').test(lowerText);
+      const matchStrippedName = strippedName.length > 2 && new RegExp(`\\b${escapeRegExp(strippedName)}\\b`, 'i').test(lowerText);
+
+      return matchFullName || matchBaseName || matchStrippedName;
+    });
+  };
 
   // --- Effects ---
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
+
+  // AUTO-SAVE EFFECT: Triggers every time the entities array changes
+  useEffect(() => {
+    localStorage.setItem('facility_registry_data', JSON.stringify(entities));
+  }, [entities]);
 
   // --- Handlers: Entities ---
   const handleUpdateEntity = (field, value) => {
@@ -147,15 +264,17 @@ export default function App() {
 
     let newEntity = { ...baseEntity };
     if (type === 'asset') {
-      newEntity = { ...baseEntity, biological_alterations: '', compliance_metric: '', degradation_status: '' };
+      newEntity = { ...baseEntity, birth_date: '', death_date: '', biological_alterations: '', compliance_metric: '', degradation_status: '', ai_analysis: '' };
     } else if (type === 'personnel') {
-      newEntity = { ...baseEntity, attributes: '', ulterior_motives: '', liabilities: '' };
+      newEntity = { ...baseEntity, birth_date: '', death_date: '', attributes: '', ulterior_motives: '', liabilities: '', ai_analysis: '' };
     } else if (type === 'technology') {
       newEntity = { ...baseEntity, biological_cost: '', deployment_status: '' };
     } else if (type === 'anomaly') {
       newEntity = { ...baseEntity, manifestation: '', environmental_impact: '' };
     } else if (type === 'event') {
-      newEntity = { ...baseEntity, sequence_number: '0', timestamp: 'Cycle XXX', involved_records: '', systemic_impact: '' };
+      newEntity = { ...baseEntity, sequence_number: '0', timestamp: 'DD-MM-YYYY', involved_records: '', systemic_impact: '' };
+    } else if (type === 'memory') {
+      newEntity = { ...baseEntity, timestamp: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'), unresolved_threads: '' };
     }
 
     setEntities([...entities, newEntity]);
@@ -167,7 +286,7 @@ export default function App() {
     if (selectedId === id) setSelectedId(null);
   };
 
-  // --- Handlers: Data Persistence ---
+  // --- Handlers: Data Persistence (Manual Backup to Desktop) ---
   const handleExport = () => {
     const dataStr = JSON.stringify(entities, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
@@ -199,7 +318,7 @@ export default function App() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // --- Handlers: LLM ---
+  // --- Handlers: LLM Overseer ---
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
     const userMsg = { role: 'user', content: chatInput };
@@ -207,13 +326,13 @@ export default function App() {
     setChatInput('');
     setIsTyping(true);
 
-    let systemContext = `You are a clinical, amoral Facility Overseer AI. Your task is to help the author maintain strict internal logic, biological consistency, and structural continuity for a dark, transgressive sci-fi world ("Trauma of Compliance"). Focus on physical mechanics, psychological degradation, technological limitations, LOGISTICAL SUPPLY CHAINS, and CHRONOLOGICAL CAUSALITY. Do NOT inject standard morality or character drama. Analyze the engineering of the horror.\n\n`;
+    let systemContext = `You are a clinical, amoral Facility Overseer AI. Your task is to help the author maintain strict internal logic, biological consistency, and structural continuity for a dark, transgressive sci-fi world ("Trauma of Compliance"). Focus on physical mechanics, psychological degradation, technological limitations, LOGISTICAL SUPPLY CHAINS, and CHRONOLOGICAL CAUSALITY. Pay specific attention to physical ages and lifespans. Do NOT inject standard morality or character drama.\n\n`;
 
     try {
       if (selectedEntity) {
         systemContext += `CURRENT FOCAL RECORD:\n${JSON.stringify(selectedEntity, null, 2)}\n\nCross-reference user queries against this exact biological and mechanical data, paying special attention to its Systemic Inputs and Outputs.`;
       } else if (selectedId === 'timeline') {
-        systemContext += `CURRENT FOCAL RECORD: The user is currently analyzing the MASTER TIMELINE. \n\nSORTED CHRONOLOGICAL EVENTS:\n${JSON.stringify(timelineEvents, null, 2)}\n\nAnalyze the chronological causality of these events. Hunt for timeline paradoxes (e.g., an asset reacting to an event that hasn't happened yet in the sequence).`;
+        systemContext += `CURRENT FOCAL RECORD: The user is currently analyzing the MASTER TIMELINE. \n\nSORTED CHRONOLOGICAL EVENTS:\n${JSON.stringify(timelineEvents, null, 2)}\n\nAnalyze the chronological causality of these events. Hunt for timeline paradoxes (e.g., an asset reacting to an event that hasn't happened yet in the sequence, or biological impossible ages based on birth/death dates).`;
       } else if (entities.length > 0) {
         setChatHistory(prev => [...prev, { role: 'system', content: '[SYSTEM]: Engaging embedding engine. Vectorizing query for semantic search...' }]);
         const embedUrl = llmUrl.replace('/api/chat', '/api/embed');
@@ -222,7 +341,7 @@ export default function App() {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ model: embedModel, input: userMsg.content })
         });
-        if (!queryRes.ok) throw new Error("Embedding Engine Offline. Ensure 'nomic-embed-text' is installed.");
+        if (!queryRes.ok) throw new Error(`Embedding Engine Offline. Verify '${embedModel}' is installed via Ollama.`);
         const queryData = await queryRes.json();
         const queryVector = queryData.embeddings[0];
 
@@ -260,7 +379,7 @@ export default function App() {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `HTTP Error ${response.status}: Registry not found.`);
+        throw new Error(errData.error || `HTTP Error ${response.status}: Registry not found. Check Model Name.`);
       }
 
       const data = await response.json();
@@ -268,7 +387,7 @@ export default function App() {
 
     } catch (error) {
       console.error(error);
-      setChatHistory(prev => [...prev, { role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message} (Verify LLM Endpoint and Model Name in configuration).` }]);
+      setChatHistory(prev => [...prev, { role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message}` }]);
     } finally {
       setIsTyping(false);
     }
@@ -278,6 +397,68 @@ export default function App() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  // --- Handlers: LLM Core Dump (Memory Archival) ---
+  const handleArchiveMemory = async () => {
+    if (isTyping) return;
+    setIsTyping(true);
+    setChatHistory(prev => [...prev, { role: 'system', content: '[SYSTEM]: Executing Core Memory Dump. Archiving facility state...' }]);
+
+    const systemContext = `You are the Facility Overseer. Execute a CORE MEMORY DUMP. Analyze the entire facility registry and timeline provided below. Summarize your current structural understanding of the narrative, note any persistent logistical bottlenecks, and record your internal logic state. 
+    
+You MUST output strictly a JSON object following this exact schema. Do NOT output markdown or conversation:
+{
+  "name": "Core Dump: [Generate a clinical title based on the data]",
+  "description": "[A detailed summary of your current understanding of the facility's state and active components]",
+  "unresolved_threads": "[Any logic gaps, missing links, or structural issues you want to track for future resolution]"
+}`;
+
+    const payload = {
+      model: llmModel,
+      messages: [
+        { role: 'system', content: systemContext },
+        { role: 'user', content: `ENTIRE FACILITY REGISTRY:\n${JSON.stringify(entities, null, 2)}` }
+      ],
+      stream: false
+    };
+
+    try {
+      const response = await fetch(llmUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error("Auditor Engine Offline.");
+
+      const data = await response.json();
+      let rawJson = data.message?.content || "{}";
+      rawJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
+
+      const parsed = JSON.parse(rawJson);
+
+      const newId = `e-mem-${Date.now()}`;
+      const newMemory = {
+        id: newId,
+        type: 'memory',
+        name: parsed.name || 'Corrupted Core Dump',
+        description: parsed.description || '',
+        unresolved_threads: parsed.unresolved_threads || '',
+        systemic_inputs: '',
+        systemic_outputs: '',
+        timestamp: new Date().toLocaleDateString('en-GB').replace(/\//g, '-')
+      };
+
+      setEntities(prev => [...prev, newMemory]);
+      setSelectedId(newId);
+      setChatHistory(prev => [...prev, { role: 'system', content: `[SYSTEM]: Core Dump successful. Memory node '${newMemory.name}' established.` }]);
+    } catch (error) {
+      console.error(error);
+      setChatHistory(prev => [...prev, { role: 'system', content: `[SYSTEM ERROR]: Core Dump Failure - ${error.message}. Ensure model outputs valid JSON.` }]);
+    } finally {
+      setIsTyping(false);
     }
   };
 
@@ -296,10 +477,11 @@ Each object must strictly follow this schema:
   "name": "[Extracted Name]",
   "description": "[Clinical summary of the entity or event]",
   "systemic_inputs": "[Deduced required materials, fuel, dependencies, or biological inputs]",
-  "systemic_outputs": "[Deduced products, waste, compliance yields, or psychological outputs]"
-  // IF TYPE IS EVENT, include these fields instead of inputs/outputs:
+  "systemic_outputs": "[Deduced products, waste, compliance yields, or psychological outputs]",
+  "birth_date": "[Deduced birth date DD-MM-YYYY, or empty string]",
+  "death_date": "[Deduced death date DD-MM-YYYY, or empty string]",
   "sequence_number": "[A deduced numeric sequence order, e.g. 10, 20, 30]",
-  "timestamp": "[In-universe time marker]",
+  "timestamp": "[In-universe time marker, preferably DD-MM-YYYY]",
   "involved_records": "[Names of assets/tech involved]",
   "systemic_impact": "[How this event altered the facility]"
 }`;
@@ -346,12 +528,12 @@ Each object must strictly follow this schema:
 
   const handleParadoxScan = async () => {
     if (isTyping) return;
-    const userMsg = { role: 'user', content: 'Initiate a paradox scan. Check the entire registry for any logical anomalies, contradictions, unaddressed biological/mechanical conflicts, SUPPLY CHAIN FAILURES, or CHRONOLOGICAL DISCREPANCIES across all recorded entities and events.' };
+    const userMsg = { role: 'user', content: 'Initiate a paradox scan. Check the entire registry for any logical anomalies, contradictions, unaddressed biological/mechanical conflicts, SUPPLY CHAIN FAILURES, or CHRONOLOGICAL DISCREPANCIES (e.g. actions occurring before a birth_date or after a death_date) across all recorded entities and events.' };
     setChatHistory(prev => [...prev, userMsg]);
     setIsTyping(true);
 
-    let systemContext = `You are a clinical, amoral Facility Overseer AI. Your task is to help the author maintain strict internal logic, biological consistency, and structural continuity for a dark, transgressive sci-fi world ("Trauma of Compliance"). Focus on physical mechanics, psychological degradation, technological limitations, and LOGISTICAL SUPPLY CHAINS. Do NOT inject standard morality or character drama. Analyze the engineering of the horror.\n\n`;
-    systemContext += `ENTIRE FACILITY REGISTRY DATABASE:\n${JSON.stringify(entities, null, 2)}\n\nCross-reference the entire database to identify contradictions, paradoxes, SUPPLY CHAIN FAILURES (where an entity lacks its 'Required Inputs'), or CHRONOLOGICAL DISCREPANCIES (where an event occurs out of logical order). Provide a clinical, numbered report of any systemic bottlenecks found.`;
+    let systemContext = `You are a clinical, amoral Facility Overseer AI. Your task is to help the author maintain strict internal logic, biological consistency, and structural continuity for a dark, transgressive sci-fi world ("Trauma of Compliance"). Focus on physical mechanics, psychological degradation, technological limitations, and LOGISTICAL SUPPLY CHAINS. Do NOT inject standard morality or character drama.\n\n`;
+    systemContext += `ENTIRE FACILITY REGISTRY DATABASE:\n${JSON.stringify(entities, null, 2)}\n\nCross-reference the entire database to identify contradictions, paradoxes, SUPPLY CHAIN FAILURES (where an entity lacks its 'Required Inputs'), or CHRONOLOGICAL DISCREPANCIES (where an event occurs out of logical order, or involves an asset that is not biologically alive at that timestamp). Provide a clinical, numbered report of any systemic bottlenecks found.`;
 
     const payload = {
       model: llmModel,
@@ -369,17 +551,126 @@ Each object must strictly follow this schema:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `HTTP Error ${response.status}: Registry not found.`);
-      }
+      if (!response.ok) throw new Error(`HTTP Error ${response.status}: Registry not found.`);
       const data = await response.json();
       setChatHistory(prev => [...prev, { role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
     } catch (error) {
       console.error(error);
-      setChatHistory(prev => [...prev, { role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message} (Verify LLM Endpoint and Model Name in configuration).` }]);
+      setChatHistory(prev => [...prev, { role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message}` }]);
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  const handleRunAudit = async () => {
+    if (isAuditing) return;
+    setIsAuditing(true);
+    setActiveOverseerTab('audit');
+
+    const systemContext = `You are a highly analytical Continuous Integration (CI) Logic Auditor for a complex sci-fi horror database. 
+Your sole function is to scan the provided registry and timeline events to identify plot holes, missing logistical links, unaddressed chronological gaps (including post-mortem paradoxes based on birth_date/death_date), or unexplained item/status transfers.
+
+You MUST output strictly a JSON array of objects. Do NOT output conversational text or markdown formatting.
+
+Each object must follow this schema:
+{
+  "id": "audit-[random 5 digit number]",
+  "severity": "CRITICAL" | "WARNING" | "NOTE",
+  "target": "[Name of the Entity or Event with the issue]",
+  "issue": "[A highly clinical, precise description of the logical gap or missing variable]"
+}`;
+
+    const payload = {
+      model: llmModel,
+      messages: [
+        { role: 'system', content: systemContext },
+        { role: 'user', content: `ENTIRE FACILITY REGISTRY AND TIMELINE:\n\n${JSON.stringify(entities, null, 2)}\n\nExecute logic audit.` }
+      ],
+      stream: false
+    };
+
+    try {
+      const response = await fetch(llmUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error("Auditor Engine Offline.");
+
+      const data = await response.json();
+      let rawJson = data.message?.content || "[]";
+      rawJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
+
+      const extractedAudits = JSON.parse(rawJson);
+
+      if (Array.isArray(extractedAudits)) {
+        setAuditLogs(extractedAudits);
+      } else {
+        throw new Error("Invalid audit data structure.");
+      }
+    } catch (error) {
+      console.error(error);
+      setAuditLogs([{ id: 'error-1', severity: 'CRITICAL', target: 'SYSTEM', issue: `Audit Failure: ${error.message}. Ensure model outputs raw JSON.` }]);
+    } finally {
+      setIsAuditing(false);
+    }
+  };
+
+  const resolveAudit = (id) => {
+    setAuditLogs(prev => prev.filter(log => log.id !== id));
+  };
+
+  // --- Handlers: Profile Auditor ---
+  const handleProfileAudit = async (entity) => {
+    if (isAuditingProfile) return;
+    setIsAuditingProfile(true);
+
+    const relatedEvents = timelineEvents.filter(e => {
+      if (!e.involved_records) return false;
+      const baseName = entity.name.split(' (')[0].toLowerCase();
+      return e.involved_records.toLowerCase().includes(baseName);
+    });
+
+    const systemContext = `You are a clinical, amoral, and ruthless Facility Overseer AI managing a dark, transgressive sci-fi horror environment. Your task is to analyze the structural, behavioral, and chronological profile of the requested biological Asset or Personnel.
+
+CRITICAL DIRECTIVE: Do NOT offer standard therapeutic, psychological, or medical counseling. The Facility does not heal; it enforces compliance. Assets are machinery. You are a mechanical auditor, not a therapist.
+
+Analyze their core profile attributes against the explicit Timeline Events they are involved in.
+1. Summarize their chronological arc based strictly on the provided events. Focus on mechanical degradation and compliance failure.
+2. Identify behavioral anomalies (e.g., actions taken during events that contradict their stated attributes, motives, or compliance metrics).
+3. Propose explicit, actionable updates to their profile fields (e.g., "Liabilities", "Biological Alterations", "Degradation Status"). Suggest new restraints, chemical dependencies, or hardware punishments to enforce compliance. NEVER suggest "therapy," "healing," or "safe environments."
+
+Output a structured, clinical text report. Use harsh, industrial, facility-appropriate terminology. Do NOT output JSON.`;
+
+    const payload = {
+      model: llmModel,
+      messages: [
+        { role: 'system', content: systemContext },
+        { role: 'user', content: `ENTITY PROFILE:\n${JSON.stringify(entity, null, 2)}\n\nINVOLVED TIMELINE EVENTS:\n${JSON.stringify(relatedEvents, null, 2)}\n\nExecute profile analysis.` }
+      ],
+      stream: false
+    };
+
+    try {
+      const response = await fetch(llmUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error("Auditor Engine Offline.");
+
+      const data = await response.json();
+      const analysisText = data.message?.content || "Analysis failed to generate.";
+
+      handleUpdateEntity('ai_analysis', analysisText);
+      setChatHistory(prev => [...prev, { role: 'system', content: `[SYSTEM]: Profile Audit completed for ${entity.name}. Dossier updated.` }]);
+    } catch (error) {
+      console.error(error);
+      setChatHistory(prev => [...prev, { role: 'system', content: `[SYSTEM ERROR]: Profile Audit Failure - ${error.message}` }]);
+    } finally {
+      setIsAuditingProfile(false);
     }
   };
 
@@ -391,6 +682,7 @@ Each object must strictly follow this schema:
       case 'technology': return <Cpu size={16} className="text-teal-500" />;
       case 'anomaly': return <Biohazard size={16} className="text-amber-500" />;
       case 'event': return <Clock size={16} className="text-indigo-400" />;
+      case 'memory': return <HardDrive size={16} className="text-emerald-500" />;
       default: return <FileWarning size={16} />;
     }
   };
@@ -406,28 +698,71 @@ Each object must strictly follow this schema:
         onChange={(val) => handleUpdateEntity(field, val)}
         colorClass={colorClass}
         placeholder={placeholder}
+        detectedLinks={getDetectedLinks(selectedEntity[field], selectedEntity.id)}
+        onNavigate={setSelectedId}
       />
     );
 
     switch (selectedEntity.type) {
       case 'asset':
-        return (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              {renderField("Biological Alterations & Implants", "biological_alterations", "text-rose-500", "List subcutaneous tech, chemical dependencies, physical alterations...")}
-            </div>
-            {renderField("Compliance Metric", "compliance_metric", "text-slate-400", "Target vs Actual compliance percentages. Behavioral loops...")}
-            {renderField("Degradation Status", "degradation_status", "text-amber-500", "Psychological fracturing, tissue decay, rejection symptoms...")}
-          </div>
-        );
       case 'personnel':
         return (
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              {renderField("Psychological Attributes", "attributes", "text-slate-400", "Cognitive biases, operational methodology...")}
+            <div className="col-span-2 flex gap-4 bg-black/40 p-3 rounded border border-slate-800/60">
+              <InputField
+                label="Birth / Assembly Date"
+                value={selectedEntity.birth_date}
+                onChange={(val) => handleUpdateEntity('birth_date', val)}
+                colorClass="text-emerald-500"
+                placeholder="DD-MM-YYYY"
+              />
+              <InputField
+                label="Death / Expiration Date"
+                value={selectedEntity.death_date}
+                onChange={(val) => handleUpdateEntity('death_date', val)}
+                colorClass="text-rose-500"
+                placeholder="DD-MM-YYYY or Empty"
+              />
             </div>
-            {renderField("Ulterior Motives", "ulterior_motives", "text-teal-500", "Hidden agendas, systemic goals...")}
-            {renderField("Liabilities / Vulnerabilities", "liabilities", "text-rose-500", "Addictions, emotional compromises, physical limits...")}
+            {selectedEntity.type === 'asset' ? (
+              <>
+                <div className="col-span-2">
+                  {renderField("Biological Alterations & Implants", "biological_alterations", "text-rose-500", "List subcutaneous tech, chemical dependencies, physical alterations...")}
+                </div>
+                {renderField("Compliance Metric", "compliance_metric", "text-slate-400", "Target vs Actual compliance percentages. Behavioral loops...")}
+                {renderField("Degradation Status", "degradation_status", "text-amber-500", "Psychological fracturing, tissue decay, rejection symptoms...")}
+              </>
+            ) : (
+              <>
+                <div className="col-span-2">
+                  {renderField("Psychological Attributes", "attributes", "text-slate-400", "Cognitive biases, operational methodology...")}
+                </div>
+                {renderField("Ulterior Motives", "ulterior_motives", "text-teal-500", "Hidden agendas, systemic goals...")}
+                {renderField("Liabilities / Vulnerabilities", "liabilities", "text-rose-500", "Addictions, emotional compromises, physical limits...")}
+              </>
+            )}
+
+            {/* AI Profile Audit Section */}
+            <div className="col-span-2 mt-4 pt-4 border-t border-slate-800/60">
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-teal-500 flex items-center gap-1.5">
+                  <Fingerprint size={12} /> Behavioral Profile Audit
+                </label>
+                <button
+                  onClick={() => handleProfileAudit(selectedEntity)}
+                  disabled={isAuditingProfile}
+                  className="px-3 py-1.5 bg-teal-950/30 hover:bg-teal-900/50 border border-teal-900/50 rounded text-[9px] uppercase tracking-widest text-teal-400 hover:text-teal-300 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                >
+                  {isAuditingProfile ? <><Activity size={10} className="animate-spin" /> Analyzing Timeline...</> : 'Generate Report'}
+                </button>
+              </div>
+              <textarea
+                value={selectedEntity.ai_analysis || ''}
+                onChange={(e) => handleUpdateEntity('ai_analysis', e.target.value)}
+                className="w-full h-64 bg-teal-950/10 border border-teal-900/30 rounded p-4 text-xs text-slate-300 focus:outline-none focus:border-teal-700 resize-none font-mono leading-relaxed shadow-inner"
+                placeholder="Click 'Generate Report' to execute a behavioral consistency audit against the master timeline..."
+              />
+            </div>
           </div>
         );
       case 'technology':
@@ -448,14 +783,43 @@ Each object must strictly follow this schema:
         return (
           <div className="grid grid-cols-2 gap-4">
             <div className="flex gap-4 col-span-2">
-              <div className="flex-1">{renderField("Numeric Sequence (Order)", "sequence_number", "text-indigo-400", "e.g., 10, 20, 30...")}</div>
-              <div className="flex-1">{renderField("In-Universe Timestamp", "timestamp", "text-slate-400", "e.g., Cycle 899, Year 2098...")}</div>
+              <InputField
+                label="Numeric Sequence (Order)"
+                value={selectedEntity.sequence_number}
+                onChange={(val) => handleUpdateEntity('sequence_number', val)}
+                colorClass="text-indigo-400"
+                placeholder="e.g., 10, 20"
+              />
+              <InputField
+                label="In-Universe Timestamp"
+                value={selectedEntity.timestamp}
+                onChange={(val) => handleUpdateEntity('timestamp', val)}
+                colorClass="text-slate-400"
+                placeholder="DD-MM-YYYY"
+              />
             </div>
             <div className="col-span-2">
               {renderField("Involved Records", "involved_records", "text-rose-500", "List entities, personnel, or anomalies present...")}
             </div>
             <div className="col-span-2">
               {renderField("Systemic Impact", "systemic_impact", "text-teal-500", "How this event permanently altered the facility or compliance metrics...")}
+            </div>
+          </div>
+        );
+      case 'memory':
+        return (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <InputField
+                label="Archival Timestamp"
+                value={selectedEntity.timestamp}
+                onChange={(val) => handleUpdateEntity('timestamp', val)}
+                colorClass="text-emerald-500"
+                placeholder="DD-MM-YYYY"
+              />
+            </div>
+            <div className="col-span-2">
+              {renderField("Unresolved Threads / Overseer Notes", "unresolved_threads", "text-amber-500", "Logic gaps the AI is currently tracking...")}
             </div>
           </div>
         );
@@ -477,20 +841,19 @@ Each object must strictly follow this schema:
 
         {/* Filters */}
         <div className="flex flex-wrap text-[10px] uppercase font-bold tracking-widest border-b border-slate-800/60 bg-[#0a0a0c]">
-          {['all', 'asset', 'personnel', 'technology', 'anomaly', 'event'].map(f => (
+          {['all', 'asset', 'personnel', 'technology', 'anomaly', 'event', 'memory'].map(f => (
             <button
               key={f}
               onClick={() => setActiveFilter(f)}
-              className={`flex-1 min-w-[33%] py-2 text-center transition-colors ${activeFilter === f ? 'bg-slate-800/50 text-white border-b-2 border-teal-600' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900'}`}
+              className={`flex-1 min-w-[30%] py-2 text-center transition-colors ${activeFilter === f ? 'bg-slate-800/50 text-white border-b-2 border-teal-600' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900'}`}
             >
-              {f === 'technology' ? 'Tech' : f === 'personnel' ? 'Staff' : f}
+              {f === 'technology' ? 'Tech' : f === 'personnel' ? 'Staff' : f === 'memory' ? 'Memory' : f}
             </button>
           ))}
         </div>
 
         {/* Entity List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {/* Master View Toggles */}
           <div className="space-y-1 mb-3">
             <button
               onClick={() => setSelectedId(null)}
@@ -525,18 +888,23 @@ Each object must strictly follow this schema:
         {/* Manufacture Buttons */}
         <div className="p-3 border-t border-slate-800/60 bg-black/20">
           <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-2">Initialize Record</p>
-          <div className="grid grid-cols-5 gap-1.5">
+          <div className="grid grid-cols-6 gap-1.5">
             <button onClick={() => createNewEntity('asset')} className="p-1.5 bg-[#15181e] hover:bg-rose-950/40 border border-slate-800 hover:border-rose-900/50 rounded flex justify-center transition-colors" title="Log Asset"><UserX size={14} className="text-rose-500" /></button>
             <button onClick={() => createNewEntity('personnel')} className="p-1.5 bg-[#15181e] hover:bg-slate-800 border border-slate-800 rounded flex justify-center transition-colors" title="Log Personnel"><UserCog size={14} className="text-slate-400" /></button>
             <button onClick={() => createNewEntity('technology')} className="p-1.5 bg-[#15181e] hover:bg-teal-950/40 border border-slate-800 hover:border-teal-900/50 rounded flex justify-center transition-colors" title="Log Technology"><Cpu size={14} className="text-teal-500" /></button>
             <button onClick={() => createNewEntity('anomaly')} className="p-1.5 bg-[#15181e] hover:bg-amber-950/40 border border-slate-800 hover:border-amber-900/50 rounded flex justify-center transition-colors" title="Log Anomaly"><Biohazard size={14} className="text-amber-500" /></button>
             <button onClick={() => createNewEntity('event')} className="p-1.5 bg-[#15181e] hover:bg-indigo-950/40 border border-slate-800 hover:border-indigo-900/50 rounded flex justify-center transition-colors" title="Log Timeline Event"><Clock size={14} className="text-indigo-400" /></button>
+            <button onClick={() => createNewEntity('memory')} className="p-1.5 bg-[#15181e] hover:bg-emerald-950/40 border border-slate-800 hover:border-emerald-900/50 rounded flex justify-center transition-colors" title="Log AI Memory"><HardDrive size={14} className="text-emerald-500" /></button>
           </div>
         </div>
 
-        {/* System Operations (Data Persistence) */}
+        {/* System Operations */}
         <div className="p-3 border-t border-slate-800/60 bg-[#0a0a0c] flex gap-2">
-          <button onClick={handleExport} className="flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border border-slate-800 rounded text-[10px] uppercase tracking-widest text-slate-400 hover:text-white transition-colors">
+          <button
+            onClick={handleExport}
+            className={`flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border rounded text-[10px] uppercase tracking-widest transition-all ${showBackupWarning ? 'border-rose-500 text-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.3)] animate-pulse' : 'border-slate-800 text-slate-400 hover:text-white'}`}
+            title="Save JSON to Desktop Folder"
+          >
             <Download size={12} /> Backup
           </button>
           <input type="file" accept=".json" onChange={handleImport} ref={fileInputRef} className="hidden" />
@@ -545,7 +913,6 @@ Each object must strictly follow this schema:
           </button>
         </div>
 
-        {/* Ingestion Trigger */}
         <div className="p-3 border-t border-slate-800/60 bg-black/40">
           <button onClick={() => setShowIngest(true)} className="w-full flex items-center justify-center gap-2 p-2 bg-teal-900/20 hover:bg-teal-900/40 border border-teal-800/50 rounded text-[10px] uppercase tracking-widest text-teal-500 hover:text-teal-400 transition-colors">
             <Database size={12} /> Auto-Ingest Raw Text
@@ -558,7 +925,6 @@ Each object must strictly follow this schema:
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] opacity-50 pointer-events-none"></div>
 
         {selectedId === 'timeline' ? (
-          /* --- MASTER TIMELINE VIEW --- */
           <div className="relative z-10 flex flex-col h-full overflow-hidden">
             <div className="p-5 border-b border-slate-800/60 flex items-center gap-4 bg-gradient-to-b from-[#0f1115] to-transparent">
               <div className="p-3 bg-black/40 border border-indigo-900/50 rounded-lg shadow-inner">
@@ -571,46 +937,74 @@ Each object must strictly follow this schema:
             </div>
 
             <div className="flex-1 overflow-y-auto p-10 relative">
-              {/* Vertical Timeline Axis */}
               <div className="absolute left-16 top-10 bottom-10 w-0.5 bg-indigo-900/30"></div>
 
               {timelineEvents.length === 0 ? (
                 <div className="text-center text-slate-600 font-mono mt-20">No events logged in the registry.</div>
               ) : (
                 <div className="space-y-12">
-                  {timelineEvents.map((event) => (
-                    <div key={event.id} className="relative flex items-start group">
-                      {/* Timeline Node */}
-                      <div className="absolute left-6 -ml-1.5 mt-1.5 w-4 h-4 rounded-full bg-[#0a0a0c] border-2 border-indigo-500 z-10 flex items-center justify-center group-hover:border-rose-500 transition-colors">
-                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full group-hover:bg-rose-500 transition-colors"></div>
-                      </div>
+                  {timelineEvents.map((event) => {
+                    const involvedNames = event.involved_records ? event.involved_records.split(',').map(s => s.trim()) : [];
+                    const renderedTags = involvedNames.map((name, idx) => {
+                      const foundEntity = entities.find(e =>
+                        e.name.toLowerCase() === name.toLowerCase() ||
+                        e.name.toLowerCase().includes(name.toLowerCase()) ||
+                        name.toLowerCase().includes(e.name.toLowerCase())
+                      );
 
-                      {/* Sequence Label */}
-                      <div className="w-16 pt-1 text-right pr-6">
-                        <span className="text-xs font-mono font-bold text-indigo-400">#{event.sequence_number}</span>
-                      </div>
+                      let ageText = "";
+                      let deathWarning = false;
 
-                      {/* Event Card */}
-                      <div className="flex-1 bg-black/40 border border-slate-800/60 rounded-lg p-5 hover:border-indigo-500/50 transition-colors cursor-pointer ml-4 shadow-lg group-hover:shadow-indigo-900/20" onClick={() => setSelectedId(event.id)}>
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-lg font-bold text-slate-200">{event.name}</h3>
-                          <span className="text-[10px] font-mono px-2 py-1 bg-indigo-950/40 text-indigo-300 rounded border border-indigo-900/50">{event.timestamp}</span>
+                      if (foundEntity && foundEntity.birth_date && event.timestamp) {
+                        const age = getAge(foundEntity.birth_date, event.timestamp);
+                        if (age !== null) ageText = ` [Age: ${age}]`;
+                      }
+
+                      if (foundEntity && foundEntity.death_date && event.timestamp) {
+                        const deathAge = getAge(event.timestamp, foundEntity.death_date);
+                        if (deathAge !== null && deathAge < 0) deathWarning = true;
+                      }
+
+                      return (
+                        <span key={idx} onClick={(e) => { e.stopPropagation(); if (foundEntity) setSelectedId(foundEntity.id); }} className={`cursor-pointer text-[9px] uppercase tracking-widest px-2 py-1 rounded border flex items-center gap-1 font-mono hover:opacity-80 transition-opacity ${deathWarning ? 'bg-rose-950/40 text-rose-400 border-rose-900/50' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
+                          {deathWarning ? <AlertTriangle size={10} /> : <GitCommit size={10} />}
+                          {name}{ageText}
+                          {deathWarning && <span className="ml-1 text-rose-500 font-bold">⚠️ POST-MORTEM</span>}
+                        </span>
+                      );
+                    });
+
+                    return (
+                      <div key={event.id} className="relative flex items-start group">
+                        <div className="absolute left-6 -ml-1.5 mt-1.5 w-4 h-4 rounded-full bg-[#0a0a0c] border-2 border-indigo-500 z-10 flex items-center justify-center group-hover:border-rose-500 transition-colors">
+                          <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full group-hover:bg-rose-500 transition-colors"></div>
                         </div>
-                        <p className="text-sm text-slate-400 mb-4 leading-relaxed">{event.description}</p>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="text-[9px] uppercase tracking-widest px-2 py-1 bg-rose-950/20 text-rose-400 rounded border border-rose-900/30 flex items-center gap-1">
-                            <GitCommit size={10} /> {event.involved_records || "No records linked"}
-                          </span>
+
+                        <div className="w-16 pt-1 text-right pr-6">
+                          <span className="text-xs font-mono font-bold text-indigo-400">#{event.sequence_number}</span>
+                        </div>
+
+                        <div className="flex-1 bg-black/40 border border-slate-800/60 rounded-lg p-5 hover:border-indigo-500/50 transition-colors cursor-pointer ml-4 shadow-lg group-hover:shadow-indigo-900/20" onClick={() => setSelectedId(event.id)}>
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="text-lg font-bold text-slate-200">{event.name}</h3>
+                            <div className="flex items-center gap-2">
+                              <Calendar size={12} className="text-indigo-400" />
+                              <span className="text-[10px] font-mono px-2 py-1 bg-indigo-950/40 text-indigo-300 rounded border border-indigo-900/50">{event.timestamp}</span>
+                            </div>
+                          </div>
+                          <p className="text-sm text-slate-400 mb-4 leading-relaxed">{event.description}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {renderedTags.length > 0 ? renderedTags : <span className="text-[9px] uppercase tracking-widest text-slate-600 font-mono">No parsed records</span>}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
           </div>
         ) : selectedEntity ? (
-          /* --- EDITOR MODE --- */
           <div className="relative z-10 flex flex-col h-full">
             <div className="p-5 border-b border-slate-800/60 flex items-start justify-between bg-gradient-to-b from-[#0f1115] to-transparent">
               <div className="flex items-center gap-4 w-full">
@@ -646,10 +1040,11 @@ Each object must strictly follow this schema:
                 onChange={(val) => handleUpdateEntity('description', val)}
                 colorClass="text-slate-400"
                 placeholder="Define the core nature of this entity..."
+                detectedLinks={getDetectedLinks(selectedEntity.description, selectedEntity.id)}
+                onNavigate={setSelectedId}
               />
 
-              {/* Hide Supply Chain fields if it's an Event, because Events have Impact fields instead */}
-              {selectedEntity.type !== 'event' && (
+              {selectedEntity.type !== 'event' && selectedEntity.type !== 'memory' && (
                 <div className="grid grid-cols-2 gap-4 bg-slate-900/40 p-4 rounded-lg border border-slate-800/80">
                   <TextAreaField
                     label="Required Inputs (Dependencies)"
@@ -657,6 +1052,8 @@ Each object must strictly follow this schema:
                     onChange={(val) => handleUpdateEntity('systemic_inputs', val)}
                     colorClass="text-indigo-400"
                     placeholder="Materials, tech, or biological fuel required to function..."
+                    detectedLinks={getDetectedLinks(selectedEntity.systemic_inputs, selectedEntity.id)}
+                    onNavigate={setSelectedId}
                   />
                   <TextAreaField
                     label="Systemic Outputs (Yield & Byproduct)"
@@ -664,6 +1061,8 @@ Each object must strictly follow this schema:
                     onChange={(val) => handleUpdateEntity('systemic_outputs', val)}
                     colorClass="text-emerald-400"
                     placeholder="What this produces, excretes, or forces into the system..."
+                    detectedLinks={getDetectedLinks(selectedEntity.systemic_outputs, selectedEntity.id)}
+                    onNavigate={setSelectedId}
                   />
                 </div>
               )}
@@ -674,7 +1073,6 @@ Each object must strictly follow this schema:
             </div>
           </div>
         ) : (
-          /* --- GLOBAL SEARCH MODE --- */
           <div className="flex-1 flex items-center justify-center text-slate-600 flex-col gap-4 relative z-10">
             <Search size={48} className="opacity-20 text-teal-500" />
             <div className="text-center">
@@ -730,7 +1128,7 @@ Each object must strictly follow this schema:
               />
             </div>
             <div className="text-[10px] text-teal-500/70 p-2 bg-teal-950/20 rounded border border-teal-900/30">
-              System explicitly feeds biological and operational data of the active record into context. Global View utilises RAG vector isolation.
+              Browser Local Storage Auto-Save is active. No manual save required to prevent data loss.
             </div>
           </div>
         )}
@@ -752,18 +1150,27 @@ Each object must strictly follow this schema:
         </div>
 
         {activeOverseerTab === 'terminal' ? (
-          /* --- TERMINAL TAB --- */
           <>
             <div className="px-4 py-2 border-b border-slate-800/60 bg-teal-950/10 flex justify-between items-center shadow-inner">
-              <span className="text-[9px] text-teal-600/70 uppercase tracking-widest font-mono">Macro Diagnostics</span>
-              <button
-                onClick={handleParadoxScan}
-                disabled={isTyping}
-                className="flex items-center gap-1.5 px-2 py-1 bg-teal-900/20 hover:bg-rose-900/30 border border-teal-800/50 hover:border-rose-700/50 rounded text-[9px] text-teal-500 hover:text-rose-400 disabled:opacity-50 disabled:hover:bg-teal-900/20 disabled:hover:border-teal-800/50 disabled:hover:text-teal-500 uppercase tracking-widest transition-colors"
-                title="Scan entire database for contradictions"
-              >
-                <Activity size={10} /> Paradox Scan
-              </button>
+              <span className="text-[9px] text-teal-600/70 uppercase tracking-widest font-mono flex items-center gap-1"><BrainCircuit size={10} /> Macro Directives</span>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={handleArchiveMemory}
+                  disabled={isTyping}
+                  className="px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 hover:border-emerald-700/50 rounded text-[9px] text-emerald-500 hover:text-emerald-400 disabled:opacity-50 uppercase tracking-widest transition-colors"
+                  title="Force AI to summarize and save its current understanding"
+                >
+                  <HardDrive size={10} /> Dump
+                </button>
+                <button
+                  onClick={handleParadoxScan}
+                  disabled={isTyping}
+                  className="px-2 py-1 bg-teal-900/20 hover:bg-rose-900/30 border border-teal-800/50 hover:border-rose-700/50 rounded text-[9px] text-teal-500 hover:text-rose-400 disabled:opacity-50 uppercase tracking-widest transition-colors"
+                  title="Scan entire database for contradictions"
+                >
+                  <Activity size={10} /> Scan
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-5">
@@ -816,7 +1223,6 @@ Each object must strictly follow this schema:
             </div>
           </>
         ) : (
-          /* --- CI AUDIT TAB --- */
           <div className="flex-1 flex flex-col h-full overflow-hidden">
             <div className="p-4 border-b border-slate-800/60 bg-black/40 flex justify-between items-center">
               <div>
@@ -857,7 +1263,6 @@ Each object must strictly follow this schema:
                     </div>
                     <p className="text-xs text-slate-300 leading-relaxed font-mono">{log.issue}</p>
 
-                    {/* Resolve Button - Appears on hover */}
                     <button
                       onClick={() => resolveAudit(log.id)}
                       className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 rounded text-[9px] text-emerald-500 uppercase tracking-widest transition-all"
