@@ -85,6 +85,11 @@ export default function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Ingestion Modal State
+  const [showIngest, setShowIngest] = useState(false);
+  const [ingestText, setIngestText] = useState('');
+  const [isIngesting, setIsIngesting] = useState(false);
+
   // Reference to automatically scroll the chat window to the newest message
   const chatEndRef = useRef(null);
   // Hidden reference to trigger the file input dialog for importing backups
@@ -288,6 +293,16 @@ export default function App() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleIngestRawText = async () => {
+    // Placeholder for extraction logic
+    setIsIngesting(true);
+    setTimeout(() => {
+      setIsIngesting(false);
+      setShowIngest(false);
+      setIngestText('');
+    }, 1000);
   };
 
   const handleParadoxScan = async () => {
