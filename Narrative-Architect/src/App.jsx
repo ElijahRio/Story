@@ -4,7 +4,7 @@ import {
   Settings, Send, Trash2, Activity, FileWarning,
   Download, Upload, Search, Clock, GitCommit,
   Bug, CheckCircle, AlertTriangle, Bell, Calendar,
-  CornerDownRight, Fingerprint, HardDrive, BrainCircuit
+  CornerDownRight, Fingerprint, HardDrive, BrainCircuit, GitMerge
 } from 'lucide-react';
 
 // --- Utility Functions ---
@@ -226,6 +226,10 @@ export default function App() {
   const [isIngesting, setIsIngesting] = useState(false);
   const [isAuditingProfile, setIsAuditingProfile] = useState(false);
 
+  // Merge State
+  const [showMergeUI, setShowMergeUI] = useState(false);
+  const [mergeTargetId, setMergeTargetId] = useState('');
+
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -311,6 +315,76 @@ export default function App() {
   const deleteEntity = (id) => {
     setEntities(entities.filter(e => e.id !== id));
     if (selectedId === id) setSelectedId(null);
+  };
+
+  const handleMerge = (sourceId, targetId) => {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+
+    const sourceEntity = entities.find(e => e.id === sourceId);
+    const targetEntity = entities.find(e => e.id === targetId);
+
+    if (!sourceEntity || !targetEntity) return;
+
+    // Helper to safely combine strings
+    const combineText = (t1, t2) => {
+      const s1 = safeString(t1).trim();
+      const s2 = safeString(t2).trim();
+      if (s1 && s2) return `${s1}\n\n[MERGED RECORD]:\n${s2}`;
+      return s1 || s2;
+    };
+
+    // Construct the new merged target entity
+    const mergedTarget = { ...targetEntity };
+
+    // Merge standard text fields safely
+    const textFieldsToMerge = [
+      'description', 'systemic_inputs', 'systemic_outputs',
+      'biological_alterations', 'compliance_metric', 'degradation_status',
+      'attributes', 'ulterior_motives', 'liabilities',
+      'biological_cost', 'deployment_status',
+      'manifestation', 'environmental_impact',
+      'unresolved_threads'
+    ];
+
+    textFieldsToMerge.forEach(field => {
+      if (sourceEntity[field]) {
+        mergedTarget[field] = combineText(targetEntity[field], sourceEntity[field]);
+      }
+    });
+
+    // Handle name substitution in timeline events
+    const sourceNameBase = sourceEntity.name.split(' (')[0].trim();
+    const targetNameBase = targetEntity.name.split(' (')[0].trim();
+
+    const updatedEntities = entities.map(e => {
+      // 1. Update the target entity
+      if (e.id === targetId) return mergedTarget;
+
+      // 2. Filter out the source entity
+      if (e.id === sourceId) return null;
+
+      // 3. Update timeline events to replace the source's name with the target's name
+      if (e.type === 'event' && e.involved_records) {
+        const records = safeString(e.involved_records).split(',').map(s => s.trim());
+        const hasSource = records.some(r => r.toLowerCase() === sourceNameBase.toLowerCase());
+
+        if (hasSource) {
+          // Replace source name with target name, ensure no duplicates
+          const updatedRecords = Array.from(new Set(
+            records.map(r => r.toLowerCase() === sourceNameBase.toLowerCase() ? targetNameBase : r)
+          )).join(', ');
+
+          return { ...e, involved_records: updatedRecords };
+        }
+      }
+
+      return e;
+    }).filter(Boolean); // Remove the null (source entity)
+
+    setEntities(updatedEntities);
+    setSelectedId(targetId);
+    setShowMergeUI(false);
+    setMergeTargetId('');
   };
 
   // --- Handlers: Data Persistence (Manual Backup to Desktop) ---
@@ -555,7 +629,7 @@ Each object must strictly follow this schema:
           rawJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
           extractedEntities = JSON.parse(rawJson);
         }
-      } catch (parseError) {
+      } catch {
         rawJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
         extractedEntities = JSON.parse(rawJson);
       }
@@ -565,7 +639,11 @@ Each object must strictly follow this schema:
       }
 
       if (Array.isArray(extractedEntities) && extractedEntities.length > 0) {
-        setEntities(prev => [...prev, ...extractedEntities.map(sanitizeEntity)]);
+        const newlyIngested = extractedEntities.map(ent => ({
+          ...sanitizeEntity(ent),
+          id: `e-auto-${crypto.randomUUID()}`
+        }));
+        setEntities(prev => [...prev, ...newlyIngested]);
         setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM]: Successfully parsed and ingested ${extractedEntities.length} new records from raw transcript.` }]);
         setShowIngest(false);
         setIngestText('');
