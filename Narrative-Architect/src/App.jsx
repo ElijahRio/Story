@@ -4,7 +4,7 @@ import {
   Settings, Send, Trash2, Activity, FileWarning,
   Download, Upload, Search, Clock, GitCommit,
   Bug, CheckCircle, AlertTriangle, Bell, Calendar,
-  CornerDownRight, Fingerprint, HardDrive, BrainCircuit, GitMerge
+  CornerDownRight, Fingerprint, HardDrive, BrainCircuit, GitMerge, X
 } from 'lucide-react';
 
 // --- Utility Functions ---
@@ -237,6 +237,9 @@ export default function App() {
   // Merge State
   const [showMergeUI, setShowMergeUI] = useState(false);
   const [mergeTargetId, setMergeTargetId] = useState('');
+
+  // UX State
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -1211,13 +1214,37 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 >
                   <GitMerge size={16} />
                 </button>
-                <button
-                  onClick={() => deleteEntity(selectedEntity.id)}
-                  className="p-2 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded transition-colors"
-                  title="Purge Record"
-                >
-                  <Trash2 size={16} />
-                </button>
+                {deleteConfirmId === selectedEntity.id ? (
+                  <div className="flex items-center gap-1 bg-rose-950/40 border border-rose-900/50 rounded p-1">
+                    <span className="text-[10px] uppercase tracking-widest text-rose-500 font-bold px-2">Purge?</span>
+                    <button
+                      onClick={() => {
+                        deleteEntity(selectedEntity.id);
+                        setDeleteConfirmId(null);
+                      }}
+                      className="px-2 py-1 text-[10px] uppercase tracking-widest text-white bg-rose-600 hover:bg-rose-500 rounded focus-visible:ring-2 focus-visible:ring-rose-400 focus:outline-none transition-colors"
+                      aria-label="Confirm purge record"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirmId(null)}
+                      className="px-2 py-1 text-[10px] uppercase tracking-widest text-slate-300 hover:text-white hover:bg-slate-800 rounded focus-visible:ring-2 focus-visible:ring-slate-400 focus:outline-none transition-colors"
+                      aria-label="Cancel purge record"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setDeleteConfirmId(selectedEntity.id)}
+                    className="p-2 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded focus-visible:ring-2 focus-visible:ring-rose-500 focus:outline-none transition-colors"
+                    title="Purge Record"
+                    aria-label={`Purge ${selectedEntity.name}`}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1429,7 +1456,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   aria-label="Send message"
                   onClick={handleSendMessage}
                   disabled={isTyping || !chatInput.trim()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-teal-600/20 hover:bg-teal-600/40 text-teal-500 disabled:text-slate-600 disabled:bg-transparent rounded transition-colors"
+                  title={isTyping ? "Overseer is processing..." : !chatInput.trim() ? "Input required" : "Send message"}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-teal-600/20 hover:bg-teal-600/40 text-teal-500 disabled:text-slate-600 disabled:bg-transparent disabled:cursor-not-allowed rounded focus-visible:ring-2 focus-visible:ring-teal-500 focus:outline-none transition-colors"
                 >
                   <Send size={16} />
                 </button>
@@ -1501,8 +1529,12 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 <Database size={16} />
                 <span>Raw Transcript Ingestion Terminal</span>
               </div>
-              <button onClick={() => setShowIngest(false)} className="text-slate-500 hover:text-rose-500 transition-colors">
-                <Trash2 size={16} />
+              <button
+                onClick={() => setShowIngest(false)}
+                className="p-1 rounded text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 focus-visible:ring-2 focus-visible:ring-rose-500 focus:outline-none transition-colors"
+                aria-label="Close ingestion terminal"
+              >
+                <X size={16} />
               </button>
             </div>
 
