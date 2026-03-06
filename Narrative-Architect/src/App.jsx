@@ -68,28 +68,35 @@ function getAge(birthStr, eventStr) {
 }
 
 // --- UI Components ---
-const InputField = ({ label, value, onChange, colorClass, placeholder }) => (
-  <div className="space-y-1.5 flex-1">
-    <label className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
-    <input
-      type="text"
-      value={value || ''}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-slate-500 font-mono shadow-inner"
-      placeholder={placeholder}
-    />
-  </div>
-);
+const InputField = ({ label, value, onChange, colorClass, placeholder }) => {
+  const id = React.useId();
+  return (
+    <div className="space-y-1.5 flex-1">
+      <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
+      <input
+        id={id}
+        type="text"
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-slate-500 font-mono shadow-inner"
+        placeholder={placeholder}
+      />
+    </div>
+  );
+};
 
-const TextAreaField = ({ label, value, onChange, colorClass, placeholder, detectedLinks, onNavigate }) => (
-  <div className="space-y-1.5 flex-1 flex flex-col">
-    <label className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
-    <textarea
-      value={value || ''}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full h-28 bg-slate-950/50 border border-slate-800 rounded p-3 text-sm text-slate-300 focus:outline-none focus:border-slate-500 resize-none font-mono leading-relaxed shadow-inner"
-      placeholder={placeholder}
-    />
+const TextAreaField = ({ label, value, onChange, colorClass, placeholder, detectedLinks, onNavigate }) => {
+  const id = React.useId();
+  return (
+    <div className="space-y-1.5 flex-1 flex flex-col">
+      <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
+      <textarea
+        id={id}
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full h-28 bg-slate-950/50 border border-slate-800 rounded p-3 text-sm text-slate-300 focus:outline-none focus:border-slate-500 resize-none font-mono leading-relaxed shadow-inner"
+        placeholder={placeholder}
+      />
 
     {/* Dynamic Link Rendering - The Conveyor Belts */}
     {detectedLinks && detectedLinks.length > 0 && (
@@ -107,7 +114,8 @@ const TextAreaField = ({ label, value, onChange, colorClass, placeholder, detect
       </div>
     )}
   </div>
-);
+  );
+};
 
 // --- Trauma of Compliance: Core Database ---
 const initialEntities = [
@@ -1282,6 +1290,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <span>Mira / Overseer</span>
           </div>
           <button
+            aria-label="Settings"
             onClick={() => setShowSettings(!showSettings)}
             className={`p-1.5 rounded transition-colors ${showSettings ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
           >
@@ -1403,6 +1412,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   className="w-full bg-[#15181e] border border-slate-700 rounded pl-3 pr-10 py-3 text-sm text-slate-200 focus:outline-none focus:border-teal-600 resize-none h-16 font-mono transition-colors shadow-inner"
                 />
                 <button
+                  aria-label="Send message"
                   onClick={handleSendMessage}
                   disabled={isTyping || !chatInput.trim()}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-teal-600/20 hover:bg-teal-600/40 text-teal-500 disabled:text-slate-600 disabled:bg-transparent rounded transition-colors"
