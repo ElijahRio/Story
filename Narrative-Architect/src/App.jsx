@@ -6,7 +6,6 @@ import {
   Bug, CheckCircle, AlertTriangle, Bell, Calendar,
   CornerDownRight, Fingerprint, HardDrive, BrainCircuit, GitMerge
 } from 'lucide-react';
-import yaml from 'js-yaml';
 
 // --- Utility Functions ---
 const safeString = (val) => {
@@ -530,10 +529,12 @@ export default function App() {
 
     const systemContext = `You are the Facility Overseer. Execute a CORE MEMORY DUMP. Analyze the entire facility registry and timeline provided below. Summarize your current structural understanding of the narrative, note any persistent logistical bottlenecks, and record your internal logic state. 
 
-You MUST output strictly a YAML object following this exact schema. Do NOT output JSON, markdown, or conversation:
-name: "Core Dump: [Generate a clinical title based on the data]"
-description: "[A detailed summary of your current understanding of the facility's state and active components]"
-unresolved_threads: "[Any logic gaps, missing links, or structural issues you want to track for future resolution]"`;
+You MUST output strictly a JSON object following this exact schema. Do NOT output markdown or conversation:
+{
+  "name": "Core Dump: [Generate a clinical title based on the data]",
+  "description": "[A detailed summary of your current understanding of the facility's state and active components]",
+  "unresolved_threads": "[Any logic gaps, missing links, or structural issues you want to track for future resolution]"
+}`;
 
     const payload = {
       model: llmModel,
@@ -541,6 +542,7 @@ unresolved_threads: "[Any logic gaps, missing links, or structural issues you wa
         { role: 'system', content: systemContext },
         { role: 'user', content: `ENTIRE FACILITY REGISTRY:\n${JSON.stringify(entities, null, 2)}` }
       ],
+      format: "json",
       stream: false
     };
 
@@ -555,8 +557,15 @@ unresolved_threads: "[Any logic gaps, missing links, or structural issues you wa
 
       const data = await response.json();
       let rawText = data.message?.content || "";
-      rawText = rawText.replace(/```yaml/g, '').replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = yaml.load(rawText) || {};
+
+      // Aggressive JSON extraction
+      const firstBrace = rawText.indexOf('{');
+      const lastBrace = rawText.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        rawText = rawText.substring(firstBrace, lastBrace + 1);
+      }
+
+      const parsed = JSON.parse(rawText) || {};
 
       const newId = `e-mem-${Date.now()}`;
 
@@ -576,7 +585,7 @@ unresolved_threads: "[Any logic gaps, missing links, or structural issues you wa
       setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM]: Core Dump successful. Memory node '${newMemory.name}' established.` }]);
     } catch (error) {
       console.error(error);
-      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM ERROR]: Core Dump Failure - ${error.message}. Ensure model outputs valid YAML.` }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM ERROR]: Core Dump Failure - ${error.message}. Ensure model outputs valid JSON.` }]);
     } finally {
       setIsTyping(false);
     }
@@ -588,21 +597,23 @@ unresolved_threads: "[Any logic gaps, missing links, or structural issues you wa
 
     const systemContext = `You are a clinical data extraction algorithm operating within the Facility. Your absolute directive is to parse the following raw transcript and extract any distinct biological assets, personnel, technologies, anomalies, or TIMELINE EVENTS. 
     
-You MUST output strictly a YAML array of objects. Do NOT output JSON, any conversational text, markdown formatting, or explanations.
+You MUST output strictly a JSON object with a key "entities" containing an array of objects. Do NOT output any conversational text, markdown formatting, or explanations.
 
-Each object must strictly follow this schema:
-- id: "e-auto-[generate random 5 digit number]"
-  type: "asset" | "personnel" | "technology" | "anomaly" | "event"
-  name: "[Extracted Name]"
-  description: "[Clinical summary of the entity or event]"
-  systemic_inputs: "[Deduced required materials, fuel, dependencies, or biological inputs]"
-  systemic_outputs: "[Deduced products, waste, compliance yields, or psychological outputs]"
-  birth_date: "[Deduced birth date DD-MM-YYYY, or empty string]"
-  death_date: "[Deduced death date DD-MM-YYYY, or empty string]"
-  sequence_number: "[A deduced numeric sequence order, e.g. 10, 20, 30]"
-  timestamp: "[In-universe time marker, preferably DD-MM-YYYY]"
-  involved_records: "[Names of assets/tech involved]"
-  systemic_impact: "[How this event altered the facility]"`;
+Each object in the "entities" array must strictly follow this schema:
+{
+  "id": "e-auto-[generate random 5 digit number]",
+  "type": "asset" | "personnel" | "technology" | "anomaly" | "event",
+  "name": "[Extracted Name]",
+  "description": "[Clinical summary of the entity or event]",
+  "systemic_inputs": "[Deduced required materials, fuel, dependencies, or biological inputs]",
+  "systemic_outputs": "[Deduced products, waste, compliance yields, or psychological outputs]",
+  "birth_date": "[Deduced birth date DD-MM-YYYY, or empty string]",
+  "death_date": "[Deduced death date DD-MM-YYYY, or empty string]",
+  "sequence_number": "[A deduced numeric sequence order, e.g. 10, 20, 30]",
+  "timestamp": "[In-universe time marker, preferably DD-MM-YYYY]",
+  "involved_records": "[Names of assets/tech involved]",
+  "systemic_impact": "[How this event altered the facility]"
+}`;
 
     const payload = {
       model: llmModel,
@@ -610,6 +621,7 @@ Each object must strictly follow this schema:
         { role: 'system', content: systemContext },
         { role: 'user', content: `RAW TRANSCRIPT TO PROCESS:\n\n${ingestText}` }
       ],
+      format: "json",
       stream: false
     };
 
@@ -624,8 +636,16 @@ Each object must strictly follow this schema:
 
       const data = await response.json();
       let rawText = data.message?.content || "";
-      rawText = rawText.replace(/```yaml/gi, '').replace(/```json/gi, '').replace(/```/g, '').trim();
-      let extractedEntities = yaml.load(rawText);
+
+      // Aggressive JSON extraction
+      const firstBrace = rawText.indexOf('{');
+      const lastBrace = rawText.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        rawText = rawText.substring(firstBrace, lastBrace + 1);
+      }
+
+      let parsedData = JSON.parse(rawText);
+      let extractedEntities = parsedData.entities || parsedData;
 
       if (extractedEntities && !Array.isArray(extractedEntities)) {
         extractedEntities = [extractedEntities];
@@ -645,7 +665,7 @@ Each object must strictly follow this schema:
       }
     } catch (error) {
       console.error(error);
-      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM ERROR]: Ingestion Failure - ${error.message}. Ensure the local model is responding with valid YAML.` }]);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM ERROR]: Ingestion Failure - ${error.message}. Ensure the local model is responding with valid JSON.` }]);
     } finally {
       setIsIngesting(false);
     }
@@ -695,13 +715,15 @@ Each object must strictly follow this schema:
     const systemContext = `You are a highly analytical Continuous Integration (CI) Logic Auditor for a complex sci-fi horror database. 
 Your sole function is to scan the provided registry and timeline events to identify plot holes, missing logistical links, unaddressed chronological gaps (including post-mortem paradoxes based on birth_date/death_date), or unexplained item/status transfers.
 
-You MUST output strictly a YAML array of objects. Do NOT output JSON, conversational text or markdown formatting.
+You MUST output strictly a JSON object with a key "audits" containing an array of objects. Do NOT output conversational text or markdown formatting.
 
-Each object must follow this schema:
-- id: "audit-[random 5 digit number]"
-  severity: "CRITICAL" | "WARNING" | "NOTE"
-  target: "[Name of the Entity or Event with the issue]"
-  issue: "[A highly clinical, precise description of the logical gap or missing variable]"`;
+Each object in the "audits" array must follow this schema:
+{
+  "id": "audit-[random 5 digit number]",
+  "severity": "CRITICAL" | "WARNING" | "NOTE",
+  "target": "[Name of the Entity or Event with the issue]",
+  "issue": "[A highly clinical, precise description of the logical gap or missing variable]"
+}`;
 
     const payload = {
       model: llmModel,
@@ -709,6 +731,7 @@ Each object must follow this schema:
         { role: 'system', content: systemContext },
         { role: 'user', content: `ENTIRE FACILITY REGISTRY AND TIMELINE:\n\n${JSON.stringify(entities, null, 2)}\n\nExecute logic audit.` }
       ],
+      format: "json",
       stream: false
     };
 
@@ -723,8 +746,20 @@ Each object must follow this schema:
 
       const data = await response.json();
       let rawText = data.message?.content || "";
-      rawText = rawText.replace(/```yaml/g, '').replace(/```json/g, '').replace(/```/g, '').trim();
-      const extractedAudits = yaml.load(rawText);
+
+      // Aggressive JSON extraction
+      const firstBrace = rawText.indexOf('{');
+      const lastBrace = rawText.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        rawText = rawText.substring(firstBrace, lastBrace + 1);
+      }
+
+      let parsedData = JSON.parse(rawText);
+      let extractedAudits = parsedData.audits || parsedData;
+
+      if (extractedAudits && !Array.isArray(extractedAudits)) {
+        extractedAudits = [extractedAudits];
+      }
 
       if (Array.isArray(extractedAudits)) {
         setAuditLogs(extractedAudits);
@@ -733,7 +768,7 @@ Each object must follow this schema:
       }
     } catch (error) {
       console.error(error);
-      setAuditLogs([{ id: 'error-1', severity: 'CRITICAL', target: 'SYSTEM', issue: `Audit Failure: ${error.message}. Ensure model outputs raw YAML.` }]);
+      setAuditLogs([{ id: 'error-1', severity: 'CRITICAL', target: 'SYSTEM', issue: `Audit Failure: ${error.message}. Ensure model outputs valid JSON.` }]);
     } finally {
       setIsAuditing(false);
     }
