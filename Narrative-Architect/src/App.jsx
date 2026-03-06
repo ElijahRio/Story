@@ -750,8 +750,21 @@ Each object in the "audits" array must follow this schema:
       // Aggressive JSON extraction
       const firstBrace = rawText.indexOf('{');
       const lastBrace = rawText.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1) {
-        rawText = rawText.substring(firstBrace, lastBrace + 1);
+      const firstBracket = rawText.indexOf('[');
+      const lastBracket = rawText.lastIndexOf(']');
+
+      let firstIndex = -1;
+      if (firstBrace !== -1 && firstBracket !== -1) firstIndex = Math.min(firstBrace, firstBracket);
+      else if (firstBrace !== -1) firstIndex = firstBrace;
+      else if (firstBracket !== -1) firstIndex = firstBracket;
+
+      let lastIndex = -1;
+      if (lastBrace !== -1 && lastBracket !== -1) lastIndex = Math.max(lastBrace, lastBracket);
+      else if (lastBrace !== -1) lastIndex = lastBrace;
+      else if (lastBracket !== -1) lastIndex = lastBracket;
+
+      if (firstIndex !== -1 && lastIndex !== -1) {
+        rawText = rawText.substring(firstIndex, lastIndex + 1);
       }
 
       let parsedData = JSON.parse(rawText);
@@ -762,7 +775,13 @@ Each object in the "audits" array must follow this schema:
       }
 
       if (Array.isArray(extractedAudits)) {
-        setAuditLogs(extractedAudits);
+        const sanitizedAudits = extractedAudits.map(audit => ({
+          id: safeString(audit.id) || `audit-${Math.floor(Math.random() * 100000)}`,
+          severity: safeString(audit.severity) || 'NOTE',
+          target: safeString(audit.target) || 'UNKNOWN',
+          issue: safeString(audit.issue) || 'Unknown issue detected.'
+        }));
+        setAuditLogs(sanitizedAudits);
       } else {
         throw new Error("Invalid audit data structure.");
       }
