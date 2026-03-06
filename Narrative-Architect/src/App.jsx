@@ -265,8 +265,10 @@ export default function App() {
       const baseName = fullName.split(' (')[0].trim();
       const strippedName = baseName.replace(/^(the|a|an)\s+/, '');
 
+      // ⚡ Bolt: Added `lowerName` to the dictionary to avoid redundant `.toLowerCase()` conversions during timeline render map iterations.
       return {
         ...e,
+        lowerName: fullName,
         matchFullName: new RegExp(`\\b${escapeRegExp(fullName)}\\b`, 'i'),
         matchBaseName: baseName.length > 2 ? new RegExp(`\\b${escapeRegExp(baseName)}\\b`, 'i') : null,
         matchStrippedName: strippedName.length > 2 ? new RegExp(`\\b${escapeRegExp(strippedName)}\\b`, 'i') : null,
@@ -1124,11 +1126,11 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                     const involvedNames = safeRecords ? safeRecords.split(',').map(s => s.trim()) : [];
                     const renderedTags = involvedNames.map((name, idx) => {
                       const lowerName = name.toLowerCase();
-                      const foundEntity = entities.find(e => {
-                        const entityNameLower = safeString(e.name).toLowerCase();
-                        return entityNameLower === lowerName ||
-                          entityNameLower.includes(lowerName) ||
-                          lowerName.includes(entityNameLower);
+                      // ⚡ Bolt: Use `entityLinkDictionary` which pre-computes `.lowerName` to avoid O(N*M) string reallocations during timeline renders.
+                      const foundEntity = entityLinkDictionary.find(e => {
+                        return e.lowerName === lowerName ||
+                          e.lowerName.includes(lowerName) ||
+                          lowerName.includes(e.lowerName);
                       });
 
                       let ageText = "";
