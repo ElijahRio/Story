@@ -4,7 +4,8 @@ import {
   Settings, Send, Trash2, Activity, FileWarning,
   Download, Upload, Search, Clock, GitCommit,
   Bug, CheckCircle, AlertTriangle, Bell, Calendar,
-  CornerDownRight, Fingerprint, HardDrive, BrainCircuit, GitMerge
+  CornerDownRight, Fingerprint, HardDrive, BrainCircuit, GitMerge,
+  Check, X
 } from 'lucide-react';
 
 // --- Utility Functions ---
@@ -238,6 +239,9 @@ export default function App() {
   const [showMergeUI, setShowMergeUI] = useState(false);
   const [mergeTargetId, setMergeTargetId] = useState('');
 
+  // Delete State
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -334,6 +338,7 @@ export default function App() {
   const deleteEntity = (id) => {
     setEntities(entities.filter(e => e.id !== id));
     if (selectedId === id) setSelectedId(null);
+    setConfirmDeleteId(null);
   };
 
   const handleMerge = (sourceId, targetId) => {
@@ -1211,13 +1216,36 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 >
                   <GitMerge size={16} />
                 </button>
-                <button
-                  onClick={() => deleteEntity(selectedEntity.id)}
-                  className="p-2 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded transition-colors"
-                  title="Purge Record"
-                >
-                  <Trash2 size={16} />
-                </button>
+                {confirmDeleteId === selectedEntity.id ? (
+                  <div className="flex items-center gap-1 bg-rose-500/10 rounded px-2 py-1 border border-rose-500/20">
+                    <span className="text-[10px] uppercase tracking-widest text-rose-500 font-bold mr-1">Purge?</span>
+                    <button
+                      aria-label="Confirm purge record"
+                      onClick={() => deleteEntity(selectedEntity.id)}
+                      className="p-1 text-rose-500 hover:bg-rose-500/20 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                      title="Confirm Purge"
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button
+                      aria-label="Cancel purge"
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="p-1 text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                      title="Cancel Purge"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    aria-label="Purge record"
+                    onClick={() => setConfirmDeleteId(selectedEntity.id)}
+                    className="p-2 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                    title="Purge Record"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
             </div>
 

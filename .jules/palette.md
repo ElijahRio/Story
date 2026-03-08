@@ -1,3 +1,3 @@
-## 2024-05-24 - [Accessible Dynamic Form Labels with useId]
-**Learning:** Reusable form components (`InputField`, `TextAreaField`) that can be instantiated multiple times on a single screen risk rendering multiple form fields mapped to identical `id` strings, causing screen-reader accessibility issues (A11y).
-**Action:** Use `React.useId()` to generate deterministic unique identifiers inside reusable functional form components mapping `<label htmlFor={id}>` to `<input id={id}>`.
+## 2024-05-24 - Inline Destructive Confirmation
+**Learning:** Immediate destructive actions (like delete/purge) in applications utilizing local storage auto-save without an "undo" history present a severe risk of data loss. The previous single-click icon-only button caused anxiety.
+**Action:** Implemented an inline, state-based confirmation step (Check/X icons) directly in the UI instead of a jarring modal, ensuring friction on destructive actions while maintaining the application's flow and accessible focus states.
