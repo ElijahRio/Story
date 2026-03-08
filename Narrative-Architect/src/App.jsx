@@ -271,6 +271,7 @@ export default function App() {
 
       return {
         ...e,
+        nameLower: fullName, // Pre-computed for fast timeline lookups
         matchFullName: new RegExp(`\\b${escapeRegExp(fullName)}\\b`, 'i'),
         matchBaseName: baseName.length > 2 ? new RegExp(`\\b${escapeRegExp(baseName)}\\b`, 'i') : null,
         matchStrippedName: strippedName.length > 2 ? new RegExp(`\\b${escapeRegExp(strippedName)}\\b`, 'i') : null,
@@ -1129,11 +1130,11 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                     const involvedNames = safeRecords ? safeRecords.split(',').map(s => s.trim()) : [];
                     const renderedTags = involvedNames.map((name, idx) => {
                       const lowerName = name.toLowerCase();
-                      const foundEntity = entities.find(e => {
-                        const entityNameLower = safeString(e.name).toLowerCase();
-                        return entityNameLower === lowerName ||
-                          entityNameLower.includes(lowerName) ||
-                          lowerName.includes(entityNameLower);
+                      // ⚡ Bolt: Use pre-computed nameLower from entityLinkDictionary to avoid O(N*M) string allocations per render
+                      const foundEntity = entityLinkDictionary.find(e => {
+                        return e.nameLower === lowerName ||
+                          e.nameLower.includes(lowerName) ||
+                          lowerName.includes(e.nameLower);
                       });
 
                       let ageText = "";
