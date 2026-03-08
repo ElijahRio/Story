@@ -1202,6 +1202,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                     value={selectedEntity.name}
                     onChange={(e) => handleUpdateEntity('name', e.target.value)}
                     className="bg-transparent text-2xl font-light tracking-wide text-white outline-none w-full border-b border-transparent focus:border-slate-700 transition-colors"
+                    aria-label="Entity Name"
                   />
                   <div className="flex gap-4 text-[10px] text-slate-500 uppercase tracking-widest mt-2 font-mono">
                     <span className="flex items-center gap-1"><Database size={10} /> ID: {selectedEntity.id}</span>
@@ -1254,8 +1255,9 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             {showMergeUI && (
               <div className="bg-indigo-950/20 border-b border-indigo-900/50 p-3 flex items-center gap-3">
                 <GitMerge size={14} className="text-indigo-400" />
-                <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">Merge Into:</span>
+                <label htmlFor="merge-target" className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">Merge Into:</label>
                 <select
+                  id="merge-target"
                   value={mergeTargetId}
                   onChange={(e) => setMergeTargetId(e.target.value)}
                   className="flex-1 bg-[#0a0a0c] border border-indigo-900/50 rounded p-1.5 text-xs text-slate-300 outline-none focus:border-indigo-500 font-mono"
@@ -1530,8 +1532,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 <Database size={16} />
                 <span>Raw Transcript Ingestion Terminal</span>
               </div>
-              <button onClick={() => setShowIngest(false)} className="text-slate-500 hover:text-rose-500 transition-colors">
-                <Trash2 size={16} />
+              <button onClick={() => setShowIngest(false)} aria-label="Close Ingestion Terminal" className="text-slate-500 hover:text-slate-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 rounded">
+                <X size={16} />
               </button>
             </div>
 
