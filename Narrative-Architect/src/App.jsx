@@ -260,23 +260,45 @@ export default function App() {
     entities.filter(e => e.type === 'event').sort((a, b) => (Number(a.sequence_number) || 0) - (Number(b.sequence_number) || 0))
     , [entities]);
 
+  // Ref cache to persist compiled RegExp objects across renders based on entity ID and Name
+  const matchersCacheRef = useRef(new Map());
+
   // Pre-compile RegExp matchers to optimize the Advanced Link Detection Engine.
   // RegExp compilation inside the render loop was identified as a major performance bottleneck.
   const entityLinkDictionary = useMemo(() => {
     const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return entities.map(e => {
+    const newCache = new Map();
+
+    const dictionary = entities.map(e => {
+      // ⚡ Bolt: Check if we have cached matchers for this exact entity ID and Name
+      const cached = matchersCacheRef.current.get(e.id);
+      if (cached && cached.originalName === e.name) {
+        newCache.set(e.id, cached);
+        // Important: Always spread the current entity (...e) to maintain state updates for other fields!
+        return { ...e, ...cached.matchers };
+      }
+
       const fullName = safeString(e.name).toLowerCase();
       const baseName = fullName.split(' (')[0].trim();
       const strippedName = baseName.replace(/^(the|a|an)\s+/, '');
 
-      return {
-        ...e,
+      const matchers = {
         nameLower: fullName, // Pre-computed for fast timeline lookups
         matchFullName: new RegExp(`\\b${escapeRegExp(fullName)}\\b`, 'i'),
         matchBaseName: baseName.length > 2 ? new RegExp(`\\b${escapeRegExp(baseName)}\\b`, 'i') : null,
         matchStrippedName: strippedName.length > 2 ? new RegExp(`\\b${escapeRegExp(strippedName)}\\b`, 'i') : null,
       };
+
+      newCache.set(e.id, { originalName: e.name, matchers });
+
+      return {
+        ...e,
+        ...matchers,
+      };
     });
+
+    matchersCacheRef.current = newCache;
+    return dictionary;
   }, [entities]);
 
   // --- Advanced Link Detection Engine ---
