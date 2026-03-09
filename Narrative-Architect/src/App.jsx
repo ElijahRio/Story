@@ -262,19 +262,48 @@ export default function App() {
 
   // Pre-compile RegExp matchers to optimize the Advanced Link Detection Engine.
   // RegExp compilation inside the render loop was identified as a major performance bottleneck.
+  // ⚡ Bolt: Use a ref Map to cache compiled matchers per entity.
+  // Only invalidate and re-compile when a specific entity's name changes,
+  // drastically reducing overhead when the entities array reference changes (e.g., during typing).
+  const regexCacheRef = useRef(new Map());
+
   const entityLinkDictionary = useMemo(() => {
     const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Clean up cache entries for deleted entities
+    const currentEntityIds = new Set(entities.map(e => e.id));
+    for (const id of regexCacheRef.current.keys()) {
+      if (!currentEntityIds.has(id)) {
+        regexCacheRef.current.delete(id);
+      }
+    }
+
     return entities.map(e => {
+      const cached = regexCacheRef.current.get(e.id);
       const fullName = safeString(e.name).toLowerCase();
+
+      // Return from cache if the name hasn't changed
+      if (cached && cached.nameLower === fullName) {
+        return { ...e, ...cached };
+      }
+
+      // Compile and cache new matchers if name changed or entity is new
       const baseName = fullName.split(' (')[0].trim();
       const strippedName = baseName.replace(/^(the|a|an)\s+/, '');
 
-      return {
-        ...e,
+      const compiledData = {
         nameLower: fullName, // Pre-computed for fast timeline lookups
         matchFullName: new RegExp(`\\b${escapeRegExp(fullName)}\\b`, 'i'),
         matchBaseName: baseName.length > 2 ? new RegExp(`\\b${escapeRegExp(baseName)}\\b`, 'i') : null,
         matchStrippedName: strippedName.length > 2 ? new RegExp(`\\b${escapeRegExp(strippedName)}\\b`, 'i') : null,
+      };
+
+      regexCacheRef.current.set(e.id, compiledData);
+
+      // Crucial: Must spread original entity (...e) to prevent data loss in downstream components
+      return {
+        ...e,
+        ...compiledData,
       };
     });
   }, [entities]);
