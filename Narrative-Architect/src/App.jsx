@@ -1530,8 +1530,12 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 <Database size={16} />
                 <span>Raw Transcript Ingestion Terminal</span>
               </div>
-              <button onClick={() => setShowIngest(false)} className="text-slate-500 hover:text-rose-500 transition-colors">
-                <Trash2 size={16} />
+              <button
+                onClick={() => setShowIngest(false)}
+                className="text-slate-500 hover:text-slate-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 rounded p-1"
+                aria-label="Close ingestion terminal"
+              >
+                <X size={16} />
               </button>
             </div>
 
