@@ -1,3 +1,3 @@
-## 2024-05-24 - Inline Destructive Confirmation
-**Learning:** Immediate destructive actions (like delete/purge) in applications utilizing local storage auto-save without an "undo" history present a severe risk of data loss. The previous single-click icon-only button caused anxiety.
-**Action:** Implemented an inline, state-based confirmation step (Check/X icons) directly in the UI instead of a jarring modal, ensuring friction on destructive actions while maintaining the application's flow and accessible focus states.
+## 2024-05-24 - Modal Dismissal Icon Anxieties
+**Learning:** Using destructive icons (like Trash2) and styles (like hover:text-rose-500) for non-destructive actions, such as dismissing a modal overlay, creates significant cognitive friction and user anxiety, especially in an auto-saving environment without an undo history. Users may fear they are about to delete data when they just want to cancel an action or close a dialog.
+**Action:** Always use standard dismissal icons (e.g., 'X') for closing components, and reserve destructive icons strictly for actual destructive operations (like deleting records).
