@@ -390,21 +390,47 @@ export default function App() {
     // Construct the new merged target entity
     const mergedTarget = { ...targetEntity };
 
-    // Merge standard text fields safely
-    const textFieldsToMerge = [
-      'description', 'systemic_inputs', 'systemic_outputs',
-      'biological_alterations', 'compliance_metric', 'degradation_status',
-      'attributes', 'ulterior_motives', 'liabilities',
-      'biological_cost', 'deployment_status',
-      'manifestation', 'environmental_impact',
-      'unresolved_threads'
-    ];
+    // Define valid fields per entity type to handle cross-type merging
+    const baseFields = ['id', 'type', 'name', 'description', 'systemic_inputs', 'systemic_outputs'];
+    const validFieldsByType = {
+      'asset': [...baseFields, 'birth_date', 'death_date', 'biological_alterations', 'compliance_metric', 'degradation_status', 'ai_analysis'],
+      'personnel': [...baseFields, 'birth_date', 'death_date', 'attributes', 'ulterior_motives', 'liabilities', 'ai_analysis'],
+      'technology': [...baseFields, 'biological_cost', 'deployment_status'],
+      'anomaly': [...baseFields, 'manifestation', 'environmental_impact'],
+      'event': [...baseFields, 'sequence_number', 'timestamp', 'involved_records', 'systemic_impact'],
+      'memory': [...baseFields, 'timestamp', 'unresolved_threads']
+    };
 
-    textFieldsToMerge.forEach(field => {
-      if (sourceEntity[field]) {
+    const targetType = targetEntity.type;
+    const validTargetFields = validFieldsByType[targetType] || baseFields;
+
+    const unmappedDetails = [];
+
+    // Process all fields from the source entity
+    Object.keys(sourceEntity).forEach(field => {
+      // Skip core identity fields
+      if (['id', 'type', 'name'].includes(field)) return;
+
+      const sourceValue = safeString(sourceEntity[field]).trim();
+      if (!sourceValue) return;
+
+      if (validTargetFields.includes(field)) {
+        // If it's a valid field for the target, merge normally
         mergedTarget[field] = combineText(targetEntity[field], sourceEntity[field]);
+      } else {
+        // If it's not valid for the target type, push to unmapped details
+        // Format the field name nicely (e.g., biological_alterations -> Biological Alterations)
+        const formattedField = field.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        unmappedDetails.push(`${formattedField}:\n${sourceValue}`);
       }
     });
+
+    // Append unmapped details to the target's description under [To Be Sorted]
+    if (unmappedDetails.length > 0) {
+      const sortedContent = unmappedDetails.join('\n\n');
+      const toBeSortedBlock = `[To Be Sorted]\n${sortedContent}`;
+      mergedTarget.description = combineText(mergedTarget.description, toBeSortedBlock);
+    }
 
     // Handle name substitution in timeline events
     const sourceNameBase = sourceEntity.name.split(' (')[0].trim();
@@ -1290,8 +1316,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   className="flex-1 bg-[#0a0a0c] border border-indigo-900/50 rounded p-1.5 text-xs text-slate-300 outline-none focus:border-indigo-500 font-mono"
                 >
                   <option value="">Select target record to keep...</option>
-                  {entities.filter(e => e.id !== selectedEntity.id && e.type === selectedEntity.type).map(e => (
-                    <option key={e.id} value={e.id}>{e.name}</option>
+                  {entities.filter(e => e.id !== selectedEntity.id).map(e => (
+                    <option key={e.id} value={e.id}>{e.name} ({e.type})</option>
                   ))}
                 </select>
                 <button
