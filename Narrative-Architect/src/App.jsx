@@ -330,8 +330,23 @@ export default function App() {
   }, [chatHistory]);
 
   // AUTO-SAVE EFFECT: Triggers every time the entities array changes
+  // ⚡ Bolt: Debounce the expensive JSON.stringify and localStorage write
+  // to prevent main thread blocking on every keystroke during typing.
   useEffect(() => {
-    localStorage.setItem('facility_registry_data', JSON.stringify(entities));
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem('facility_registry_data', JSON.stringify(entities));
+    }, 500);
+
+    // Ensure data is saved if the user closes the tab within the debounce window
+    const handleBeforeUnload = () => {
+      localStorage.setItem('facility_registry_data', JSON.stringify(entities));
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [entities]);
 
   // --- Handlers: Entities ---
