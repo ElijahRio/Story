@@ -5,8 +5,9 @@ import {
   Download, Upload, Search, Clock, GitCommit,
   Bug, CheckCircle, AlertTriangle, Bell, Calendar,
   CornerDownRight, Fingerprint, HardDrive, BrainCircuit, GitMerge,
-  Check, X
+  Check, X, Network
 } from 'lucide-react';
+import ForceGraph2D from 'react-force-graph-2d';
 
 // --- Utility Functions ---
 const safeString = (val) => {
@@ -245,6 +246,11 @@ export default function App() {
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // --- Graph State ---
+  const [networkEmbeddings, setNetworkEmbeddings] = useState({});
+  const [isComputingEmbeddings, setIsComputingEmbeddings] = useState(false);
+  const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+
   // --- Derived State ---
   const selectedEntity = useMemo(() =>
     entities.find(e => e.id === selectedId) || null
@@ -309,7 +315,8 @@ export default function App() {
   }, [entities]);
 
   // --- Advanced Link Detection Engine ---
-  const getDetectedLinks = (text, currentId) => {
+  // Memoized so it can be safely included in dependency arrays
+  const getDetectedLinks = React.useCallback((text, currentId) => {
     const safeText = safeString(text);
     if (!safeText) return [];
     const lowerText = safeText.toLowerCase();
@@ -322,6 +329,130 @@ export default function App() {
              (e.matchBaseName && e.matchBaseName.test(lowerText)) ||
              (e.matchStrippedName && e.matchStrippedName.test(lowerText));
     });
+  }, [entityLinkDictionary]);
+
+  // --- Network Graph Computation ---
+  useEffect(() => {
+    if (selectedId !== 'network') return;
+
+    const nodes = entities.map(e => ({
+      id: e.id,
+      name: e.name,
+      type: e.type,
+      val: 2 // Node size
+    }));
+
+    const linksMap = new Map();
+
+    const addLinkWeight = (source, target, weight, type) => {
+      if (!source || !target || source === target) return;
+      // create a consistent string key regardless of direction
+      const key = [source, target].sort().join('|');
+      if (!linksMap.has(key)) {
+        linksMap.set(key, { source, target, strength: 0, textWeight: 0, semanticWeight: 0 });
+      }
+      const link = linksMap.get(key);
+      if (type === 'text') link.textWeight += weight;
+      if (type === 'semantic') link.semanticWeight += weight;
+      link.strength = link.textWeight + link.semanticWeight;
+    };
+
+    // 1. Text-based references
+    entities.forEach(entity => {
+      const allText = [
+        entity.description,
+        entity.systemic_inputs,
+        entity.systemic_outputs,
+        entity.biological_alterations,
+        entity.attributes,
+        entity.liabilities,
+        entity.involved_records,
+        entity.systemic_impact,
+        entity.unresolved_threads,
+        entity.ai_analysis
+      ].filter(Boolean).join(' ');
+
+      const links = getDetectedLinks(allText, entity.id);
+      links.forEach(link => {
+        // Base weight for text reference
+        addLinkWeight(entity.id, link.id, 1.5, 'text');
+      });
+    });
+
+    // 2. Semantic References (if embeddings are computed)
+    if (Object.keys(networkEmbeddings).length > 0) {
+      for (let i = 0; i < entities.length; i++) {
+        for (let j = i + 1; j < entities.length; j++) {
+          const e1 = entities[i].id;
+          const e2 = entities[j].id;
+          const vec1 = networkEmbeddings[e1];
+          const vec2 = networkEmbeddings[e2];
+
+          if (vec1 && vec2) {
+            const similarity = calculateCosineSimilarity(vec1, vec2);
+            // Threshold for semantic connection
+            if (similarity > 0.75) {
+              // Scale similarity (0.75-1.0 to roughly 0-2 weight)
+              const weight = (similarity - 0.75) * 8;
+              addLinkWeight(e1, e2, weight, 'semantic');
+            }
+          }
+        }
+      }
+    }
+
+    setGraphData({
+      nodes,
+      links: Array.from(linksMap.values())
+    });
+  }, [entities, networkEmbeddings, getDetectedLinks, selectedId]);
+
+  // Handle computing embeddings for the network graph
+  const handleComputeNetworkEmbeddings = async () => {
+    if (isComputingEmbeddings) return;
+    setIsComputingEmbeddings(true);
+
+    setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: Initiating Vector Embedding generation for entire facility network...' }]);
+
+    try {
+      const embedUrl = llmUrl.replace('/api/chat', '/api/embed');
+      const newEmbeddings = { ...networkEmbeddings };
+
+      // Batch entities for embedding
+      const batchSize = 10;
+      for (let i = 0; i < entities.length; i += batchSize) {
+        const batch = entities.slice(i, i + batchSize);
+        // Only compute for entities missing embeddings
+        const toCompute = batch.filter(e => !newEmbeddings[e.id]);
+
+        if (toCompute.length > 0) {
+          const inputs = toCompute.map(e => {
+             // Create a rich text representation for semantic meaning
+             return `${e.name}. ${safeString(e.description)}. ${safeString(e.systemic_inputs)}. ${safeString(e.systemic_outputs)}`;
+          });
+
+          const batchRes = await fetch(embedUrl, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: embedModel, input: inputs })
+          });
+
+          if (!batchRes.ok) throw new Error(`Embedding Engine Error: ${batchRes.status}`);
+
+          const batchData = await batchRes.json();
+          toCompute.forEach((e, idx) => {
+            newEmbeddings[e.id] = batchData.embeddings[idx];
+          });
+        }
+      }
+
+      setNetworkEmbeddings(newEmbeddings);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: Network embedding generation complete. Connections optimized.' }]);
+    } catch (error) {
+      console.error(error);
+      setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM ERROR]: Embedding computation failed - ${error.message}.` }]);
+    } finally {
+      setIsComputingEmbeddings(false);
+    }
   };
 
   // --- Effects ---
@@ -1122,6 +1253,13 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               <span className="opacity-80"><Clock size={14} /></span>
               <span className="truncate text-xs font-bold uppercase tracking-wider">Master Timeline View</span>
             </button>
+            <button
+              onClick={() => setSelectedId('network')}
+              className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 ${selectedId === 'network' ? 'bg-rose-900/20 text-rose-400 shadow-inner border-rose-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
+            >
+              <span className="opacity-80"><Network size={14} /></span>
+              <span className="truncate text-xs font-bold uppercase tracking-wider">Network Graph View</span>
+            </button>
           </div>
 
           <div className="h-px w-full bg-slate-800/60 mb-2"></div>
@@ -1177,7 +1315,65 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
       <div className="flex-1 flex flex-col bg-[#0a0a0c] relative">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wMykiLz48L3N2Zz4=')] opacity-50 pointer-events-none"></div>
 
-        {selectedId === 'timeline' ? (
+        {selectedId === 'network' ? (
+          <div className="relative z-10 flex flex-col h-full overflow-hidden">
+            <div className="p-5 border-b border-slate-800/60 flex items-center justify-between bg-gradient-to-b from-[#0f1115] to-transparent">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-black/40 border border-rose-900/50 rounded-lg shadow-inner">
+                  <Network size={24} className="text-rose-500" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-light tracking-wide text-rose-100">Network Map</h1>
+                  <p className="text-[10px] text-rose-500/70 uppercase tracking-widest mt-1 font-mono">Entity Connectivity Visualization</p>
+                </div>
+              </div>
+              <div>
+                <button
+                  onClick={handleComputeNetworkEmbeddings}
+                  disabled={isComputingEmbeddings}
+                  className="px-4 py-2 bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/50 rounded text-xs text-rose-400 uppercase tracking-widest disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  {isComputingEmbeddings ? <><Activity size={14} className="animate-spin" /> Computing Vectors...</> : <><BrainCircuit size={14} /> Calculate Semantic Links</>}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 w-full h-full bg-[#0a0a0c]">
+              <ForceGraph2D
+                graphData={graphData}
+                nodeLabel="name"
+                nodeColor={(node) => {
+                  switch (node.type) {
+                    case 'asset': return '#f43f5e'; // rose-500
+                    case 'personnel': return '#94a3b8'; // slate-400
+                    case 'technology': return '#14b8a6'; // teal-500
+                    case 'anomaly': return '#f59e0b'; // amber-500
+                    case 'event': return '#818cf8'; // indigo-400
+                    case 'memory': return '#10b981'; // emerald-500
+                    default: return '#e2e8f0';
+                  }
+                }}
+                nodeRelSize={6}
+                linkColor={() => 'rgba(148, 163, 184, 0.4)'} // slate-400 with opacity
+                linkWidth={(link) => Math.max(0.5, link.strength * 0.8)}
+                linkOpacity={(link) => Math.min(1, 0.2 + (link.strength * 0.15))}
+                onNodeClick={(node) => setSelectedId(node.id)}
+                d3VelocityDecay={0.3}
+                cooldownTicks={100}
+                nodeCanvasObjectMode={() => 'after'}
+                nodeCanvasObject={(node, ctx, globalScale) => {
+                  const label = node.name;
+                  const fontSize = 12 / globalScale;
+                  ctx.font = `${fontSize}px Sans-Serif`;
+                  ctx.textAlign = 'center';
+                  ctx.textBaseline = 'middle';
+                  ctx.fillStyle = '#cbd5e1'; // slate-300
+                  ctx.fillText(label, node.x, node.y + (8 / globalScale) + fontSize);
+                }}
+              />
+            </div>
+          </div>
+        ) : selectedId === 'timeline' ? (
           <div className="relative z-10 flex flex-col h-full overflow-hidden">
             <div className="p-5 border-b border-slate-800/60 flex items-center gap-4 bg-gradient-to-b from-[#0f1115] to-transparent">
               <div className="p-3 bg-black/40 border border-indigo-900/50 rounded-lg shadow-inner">
