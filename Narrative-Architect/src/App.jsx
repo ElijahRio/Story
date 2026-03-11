@@ -1009,6 +1009,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 </button>
               </div>
               <textarea
+                aria-label="Behavioral Profile Audit"
                 value={selectedEntity.ai_analysis || ''}
                 onChange={(e) => handleUpdateEntity('ai_analysis', e.target.value)}
                 className="w-full h-64 bg-teal-950/10 border border-teal-900/30 rounded p-4 text-xs text-slate-300 focus:outline-none focus:border-teal-700 resize-none font-mono leading-relaxed shadow-inner"
@@ -1269,6 +1270,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 <div className="flex-1">
                   <input
                     type="text"
+                    aria-label="Entity Name"
                     value={selectedEntity.name}
                     onChange={(e) => handleUpdateEntity('name', e.target.value)}
                     className="bg-transparent text-2xl font-light tracking-wide text-white outline-none w-full border-b border-transparent focus:border-slate-700 transition-colors"
@@ -1281,6 +1283,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               </div>
               <div className="flex items-center gap-2 ml-4">
                 <button
+                  aria-label="Merge Record"
                   onClick={() => setShowMergeUI(!showMergeUI)}
                   className={`p-2 rounded transition-colors ${showMergeUI ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-600 hover:text-indigo-400 hover:bg-indigo-400/10'}`}
                   title="Merge Record"
@@ -1324,8 +1327,9 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             {showMergeUI && (
               <div className="bg-indigo-950/20 border-b border-indigo-900/50 p-3 flex items-center gap-3">
                 <GitMerge size={14} className="text-indigo-400" />
-                <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">Merge Into:</span>
+                <label htmlFor="merge-target" className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">Merge Into:</label>
                 <select
+                  id="merge-target"
                   value={mergeTargetId}
                   onChange={(e) => setMergeTargetId(e.target.value)}
                   className="flex-1 bg-[#0a0a0c] border border-indigo-900/50 rounded p-1.5 text-xs text-slate-300 outline-none focus:border-indigo-500 font-mono"
@@ -1414,8 +1418,9 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
         {showSettings && (
           <div className="p-4 border-b border-slate-800/60 bg-black/40 space-y-3 text-xs font-mono">
             <div>
-              <label className="block text-slate-500 mb-1">Terminal Endpoint</label>
+              <label htmlFor="terminal-endpoint" className="block text-slate-500 mb-1">Terminal Endpoint</label>
               <input
+                id="terminal-endpoint"
                 type="text"
                 value={llmUrl}
                 onChange={(e) => setLlmUrl(e.target.value)}
@@ -1423,8 +1428,9 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               />
             </div>
             <div>
-              <label className="block text-slate-500 mb-1">Local Chat Engine</label>
+              <label htmlFor="local-chat-engine" className="block text-slate-500 mb-1">Local Chat Engine</label>
               <input
+                id="local-chat-engine"
                 type="text"
                 value={llmModel}
                 onChange={(e) => setLlmModel(e.target.value)}
@@ -1432,8 +1438,9 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               />
             </div>
             <div>
-              <label className="block text-slate-500 mb-1">Vector Embedding Engine</label>
+              <label htmlFor="vector-embedding-engine" className="block text-slate-500 mb-1">Vector Embedding Engine</label>
               <input
+                id="vector-embedding-engine"
                 type="text"
                 value={embedModel}
                 onChange={(e) => setEmbedModel(e.target.value)}
@@ -1518,6 +1525,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <div className="p-4 border-t border-slate-800/60 bg-[#0a0a0c]">
               <div className="relative">
                 <textarea
+                  aria-label="Terminal Input"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={handleKeyPress}
@@ -1614,6 +1622,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 Paste raw text from the "Trauma of Compliance" document below. The extraction algorithm will automatically map Assets, Personnel, Tech, Anomalies, and EVENTS.
               </p>
               <textarea
+                aria-label="Raw Transcript Input"
                 value={ingestText}
                 onChange={(e) => setIngestText(e.target.value)}
                 placeholder="Paste raw PDF transcript here..."
