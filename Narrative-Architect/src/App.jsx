@@ -205,9 +205,25 @@ export default function App() {
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
 
   // --- Derived State ---
-  // ⚡ Bolt: Convert O(N) Array.find to O(1) Map lookup to optimize entity selection and operations
-  const entitiesMap = useMemo(() => {
-    return new Map(entities.map(e => [e.id, e]));
+  // ⚡ Bolt: Use a single O(N) pass to build both an O(1) ID Map and a type index.
+  // This avoids multiple redundant array traversals for `entitiesMap`, `filteredEntities`, and `timelineEvents`.
+  const { entitiesMap, entitiesByType } = useMemo(() => {
+    const map = new Map();
+    const byType = {
+      asset: [], personnel: [], technology: [], anomaly: [], event: [], memory: []
+    };
+
+    for (let i = 0; i < entities.length; i++) {
+      const e = entities[i];
+      map.set(e.id, e);
+      if (byType[e.type]) {
+        byType[e.type].push(e);
+      } else {
+        byType[e.type] = [e];
+      }
+    }
+
+    return { entitiesMap: map, entitiesByType: byType };
   }, [entities]);
 
   const selectedEntity = useMemo(() =>
@@ -217,12 +233,12 @@ export default function App() {
   const filteredEntities = useMemo(() =>
     activeFilter === 'all'
       ? entities
-      : entities.filter(e => e.type === activeFilter)
-    , [entities, activeFilter]);
+      : entitiesByType[activeFilter] || []
+    , [entities, activeFilter, entitiesByType]);
 
   const timelineEvents = useMemo(() =>
-    entities.filter(e => e.type === 'event').sort((a, b) => (Number(a.sequence_number) || 0) - (Number(b.sequence_number) || 0))
-    , [entities]);
+    [...(entitiesByType['event'] || [])].sort((a, b) => (Number(a.sequence_number) || 0) - (Number(b.sequence_number) || 0))
+    , [entitiesByType]);
 
   // ⚡ Bolt: Pre-process involved_records into arrays of lowercased strings to avoid repeated string splitting and toLowerCase calls in render
   const timelineEventsProcessed = useMemo(() => {
