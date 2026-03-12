@@ -5,3 +5,7 @@
 ## 2023-10-27 - Debouncing Auto-save for Large Data
 **Learning:** Saving an entire large dataset (e.g., thousands of entities) to `localStorage` synchronously via `useEffect` on every keystroke causes significant main-thread blocking due to `JSON.stringify` overhead. This leads to severe typing latency.
 **Action:** Always debounce expensive serialization and `localStorage` writes when they are tied to high-frequency events like typing, especially as the data payload scales.
+
+## 2025-03-11 - Array Allocation in Hot Loops (Network Graph)
+**Learning:** `[a, b].sort().join('|')` inside an O(N²) nested loop for semantic similarity weighting causes extreme performance degradation due to continuous Array instantiation, method calls, and garbage collection. JS string comparison (`a < b ? a + '|' + b : b + '|' + a`) is dramatically faster and achieves the exact same bidirectional key consistency.
+**Action:** Always use primitive string concatenation with simple conditionals for generating bidirectional hash keys in computationally heavy nested loops, avoiding temporary object creation.
