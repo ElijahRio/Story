@@ -489,7 +489,7 @@ export default function App() {
   };
 
   const createNewEntity = (type) => {
-    const newId = `e-${Date.now()}`;
+    const newId = `e-${crypto.randomUUID()}`;
     const baseEntity = { id: newId, type: type, name: `New ${type}`, description: '', systemic_inputs: '', systemic_outputs: '' };
 
     let newEntity = { ...baseEntity };
@@ -774,7 +774,7 @@ You MUST output strictly a JSON object following this exact schema. Do NOT outpu
 
       const parsed = JSON.parse(rawText) || {};
 
-      const newId = `e-mem-${Date.now()}`;
+      const newId = `e-mem-${crypto.randomUUID()}`;
 
       const newMemory = {
         id: newId,
@@ -808,7 +808,7 @@ You MUST output strictly a JSON object with a key "entities" containing an array
 
 Each object in the "entities" array must strictly follow this schema:
 {
-  "id": "e-auto-[generate random 5 digit number]",
+  "id": "e-auto-[generate a unique UUID]",
   "type": "asset" | "personnel" | "technology" | "anomaly" | "event",
   "name": "[Extracted Name]",
   "description": "[Clinical summary of the entity or event]",
@@ -926,7 +926,7 @@ You MUST output strictly a JSON object with a key "audits" containing an array o
 
 Each object in the "audits" array must follow this schema:
 {
-  "id": "audit-[random 5 digit number]",
+  "id": "audit-[generate a unique UUID]",
   "severity": "CRITICAL" | "WARNING" | "NOTE",
   "target": "[Name of the Entity or Event with the issue]",
   "issue": "[A highly clinical, precise description of the logical gap or missing variable]"
@@ -983,7 +983,7 @@ Each object in the "audits" array must follow this schema:
 
       if (Array.isArray(extractedAudits)) {
         const sanitizedAudits = extractedAudits.map(audit => ({
-          id: safeString(audit.id) || `audit-${Math.floor(Math.random() * 100000)}`,
+          id: safeString(audit.id) || `audit-${crypto.randomUUID()}`,
           severity: safeString(audit.severity) || 'NOTE',
           target: safeString(audit.target) || 'UNKNOWN',
           issue: safeString(audit.issue) || 'Unknown issue detected.'
