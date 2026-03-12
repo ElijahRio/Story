@@ -290,6 +290,35 @@ export default function App() {
     });
   }, [entityLinkDictionary]);
 
+  // ⚡ Bolt: Extract O(N^2) semantic similarity loop into a separate useMemo
+  // This prevents recalculating cosine similarity for all pairs on every keystroke
+  // when the network view is active, as it now only runs when networkEmbeddings changes.
+  const semanticLinksCache = useMemo(() => {
+    const cache = new Map();
+    const entityIds = Object.keys(networkEmbeddings);
+
+    if (entityIds.length === 0) return cache;
+
+    for (let i = 0; i < entityIds.length; i++) {
+      for (let j = i + 1; j < entityIds.length; j++) {
+        const e1 = entityIds[i];
+        const e2 = entityIds[j];
+        const vec1 = networkEmbeddings[e1];
+        const vec2 = networkEmbeddings[e2];
+
+        if (vec1 && vec2) {
+          const similarity = calculateCosineSimilarity(vec1, vec2);
+          if (similarity > 0.75) {
+            const weight = (similarity - 0.75) * 8;
+            const key = e1 < e2 ? `${e1}|${e2}` : `${e2}|${e1}`;
+            cache.set(key, { e1, e2, weight });
+          }
+        }
+      }
+    }
+    return cache;
+  }, [networkEmbeddings]);
+
   // --- Network Graph Computation ---
   useEffect(() => {
     if (selectedId !== 'network') return;
@@ -339,24 +368,12 @@ export default function App() {
       });
     });
 
-    // 2. Semantic References (if embeddings are computed)
-    if (Object.keys(networkEmbeddings).length > 0) {
-      for (let i = 0; i < entities.length; i++) {
-        for (let j = i + 1; j < entities.length; j++) {
-          const e1 = entities[i].id;
-          const e2 = entities[j].id;
-          const vec1 = networkEmbeddings[e1];
-          const vec2 = networkEmbeddings[e2];
-
-          if (vec1 && vec2) {
-            const similarity = calculateCosineSimilarity(vec1, vec2);
-            // Threshold for semantic connection
-            if (similarity > 0.75) {
-              // Scale similarity (0.75-1.0 to roughly 0-2 weight)
-              const weight = (similarity - 0.75) * 8;
-              addLinkWeight(e1, e2, weight, 'semantic');
-            }
-          }
+    // 2. Semantic References (read from pre-computed cache)
+    if (semanticLinksCache.size > 0) {
+      for (const [_, data] of semanticLinksCache) {
+        // Verify both entities still exist in the current entities list
+        if (entitiesMap.has(data.e1) && entitiesMap.has(data.e2)) {
+          addLinkWeight(data.e1, data.e2, data.weight, 'semantic');
         }
       }
     }
@@ -365,7 +382,7 @@ export default function App() {
       nodes,
       links: Array.from(linksMap.values())
     });
-  }, [entities, networkEmbeddings, getDetectedLinks, selectedId]);
+  }, [entities, getDetectedLinks, selectedId, semanticLinksCache, entitiesMap]);
 
   // Handle computing embeddings for the network graph
   const handleComputeNetworkEmbeddings = async () => {
