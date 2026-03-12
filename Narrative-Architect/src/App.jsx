@@ -198,11 +198,29 @@ export default function App() {
 
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const fgRef = useRef(null);
 
   // --- Graph State ---
   const [networkEmbeddings, setNetworkEmbeddings] = useState({});
   const [isComputingEmbeddings, setIsComputingEmbeddings] = useState(false);
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+
+  // Configure the force engine to space out nodes
+  useEffect(() => {
+    if (fgRef.current && selectedId === 'network') {
+      const charge = fgRef.current.d3Force('charge');
+      if (charge) {
+        charge.strength(-400);
+      }
+
+      const linkForce = fgRef.current.d3Force('link');
+      if (linkForce) {
+        linkForce.distance(60);
+      }
+
+      fgRef.current.d3ReheatSimulation();
+    }
+  }, [graphData, selectedId]);
 
   // --- Derived State ---
   // ⚡ Bolt: Use a single O(N) pass to build both an O(1) ID Map and a type index.
@@ -1228,6 +1246,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
 
             <div className="flex-1 w-full h-full bg-[#0a0a0c]">
               <ForceGraph2D
+                ref={fgRef}
                 graphData={graphData}
                 nodeLabel="name"
                 nodeColor={(node) => {
