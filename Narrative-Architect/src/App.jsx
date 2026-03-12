@@ -8,6 +8,9 @@ import {
   Check, X, Network
 } from 'lucide-react';
 import ForceGraph2D from 'react-force-graph-2d';
+import InputField from './components/InputField';
+import TextAreaField from './components/TextAreaField';
+import DynamicEntityFields from './components/DynamicEntityFields';
 
 // --- Utility Functions ---
 const safeString = (val) => {
@@ -70,55 +73,6 @@ function getAge(birthStr, eventStr) {
 }
 
 // --- UI Components ---
-const InputField = ({ label, value, onChange, colorClass, placeholder }) => {
-  const id = React.useId();
-  return (
-    <div className="space-y-1.5 flex-1">
-      <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
-      <input
-        id={id}
-        type="text"
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-slate-500 font-mono shadow-inner"
-        placeholder={placeholder}
-      />
-    </div>
-  );
-};
-
-const TextAreaField = ({ label, value, onChange, colorClass, placeholder, detectedLinks, onNavigate }) => {
-  const id = React.useId();
-  return (
-    <div className="space-y-1.5 flex-1 flex flex-col">
-      <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
-      <textarea
-        id={id}
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-28 bg-slate-950/50 border border-slate-800 rounded p-3 text-sm text-slate-300 focus:outline-none focus:border-slate-500 resize-none font-mono leading-relaxed shadow-inner"
-        placeholder={placeholder}
-      />
-
-    {/* Dynamic Link Rendering - The Conveyor Belts */}
-    {detectedLinks && detectedLinks.length > 0 && (
-      <div className="flex flex-wrap gap-1.5 pt-1">
-        {detectedLinks.map(link => (
-          <button
-            key={link.id}
-            onClick={() => onNavigate(link.id)}
-            className="text-[9px] uppercase tracking-widest px-2 py-1 bg-teal-950/20 hover:bg-teal-900/40 text-teal-500 hover:text-teal-400 border border-teal-900/50 hover:border-teal-700 rounded flex items-center gap-1 font-mono transition-colors shadow-sm"
-            title={`Maps to ${link.name}`}
-          >
-            <CornerDownRight size={10} /> {link.name}
-          </button>
-        ))}
-      </div>
-    )}
-  </div>
-  );
-};
-
 // --- Trauma of Compliance: Core Database ---
 const initialEntities = [
   {
@@ -1077,147 +1031,6 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
     }
   };
 
-  const renderDynamicFields = () => {
-    if (!selectedEntity) return null;
-
-    const renderField = (label, field, colorClass, placeholder) => (
-      <TextAreaField
-        key={field}
-        label={label}
-        value={selectedEntity[field]}
-        onChange={(val) => handleUpdateEntity(field, val)}
-        colorClass={colorClass}
-        placeholder={placeholder}
-        detectedLinks={getDetectedLinks(selectedEntity[field], selectedEntity.id)}
-        onNavigate={setSelectedId}
-      />
-    );
-
-    switch (selectedEntity.type) {
-      case 'asset':
-      case 'personnel':
-        return (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 flex gap-4 bg-black/40 p-3 rounded border border-slate-800/60">
-              <InputField
-                label="Birth / Assembly Date"
-                value={selectedEntity.birth_date}
-                onChange={(val) => handleUpdateEntity('birth_date', val)}
-                colorClass="text-emerald-500"
-                placeholder="DD-MM-YYYY"
-              />
-              <InputField
-                label="Death / Expiration Date"
-                value={selectedEntity.death_date}
-                onChange={(val) => handleUpdateEntity('death_date', val)}
-                colorClass="text-rose-500"
-                placeholder="DD-MM-YYYY or Empty"
-              />
-            </div>
-            {selectedEntity.type === 'asset' ? (
-              <>
-                <div className="col-span-2">
-                  {renderField("Biological Alterations & Implants", "biological_alterations", "text-rose-500", "List subcutaneous tech, chemical dependencies, physical alterations...")}
-                </div>
-                {renderField("Compliance Metric", "compliance_metric", "text-slate-400", "Target vs Actual compliance percentages. Behavioral loops...")}
-                {renderField("Degradation Status", "degradation_status", "text-amber-500", "Psychological fracturing, tissue decay, rejection symptoms...")}
-              </>
-            ) : (
-              <>
-                <div className="col-span-2">
-                  {renderField("Psychological Attributes", "attributes", "text-slate-400", "Cognitive biases, operational methodology...")}
-                </div>
-                {renderField("Ulterior Motives", "ulterior_motives", "text-teal-500", "Hidden agendas, systemic goals...")}
-                {renderField("Liabilities / Vulnerabilities", "liabilities", "text-rose-500", "Addictions, emotional compromises, physical limits...")}
-              </>
-            )}
-
-            {/* AI Profile Audit Section */}
-            <div className="col-span-2 mt-4 pt-4 border-t border-slate-800/60">
-              <div className="flex justify-between items-center mb-3">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-teal-500 flex items-center gap-1.5">
-                  <Fingerprint size={12} /> Behavioral Profile Audit
-                </label>
-                <button
-                  onClick={() => handleProfileAudit(selectedEntity)}
-                  disabled={isAuditingProfile}
-                  className="px-3 py-1.5 bg-teal-950/30 hover:bg-teal-900/50 border border-teal-900/50 rounded text-[9px] uppercase tracking-widest text-teal-400 hover:text-teal-300 disabled:opacity-50 transition-colors flex items-center gap-1.5"
-                >
-                  {isAuditingProfile ? <><Activity size={10} className="animate-spin" /> Analyzing Timeline...</> : 'Generate Report'}
-                </button>
-              </div>
-              <textarea
-                aria-label="Behavioral Profile Audit"
-                value={selectedEntity.ai_analysis || ''}
-                onChange={(e) => handleUpdateEntity('ai_analysis', e.target.value)}
-                className="w-full h-64 bg-teal-950/10 border border-teal-900/30 rounded p-4 text-xs text-slate-300 focus:outline-none focus:border-teal-700 resize-none font-mono leading-relaxed shadow-inner"
-                placeholder="Click 'Generate Report' to execute a behavioral consistency audit against the master timeline..."
-              />
-            </div>
-          </div>
-        );
-      case 'technology':
-        return (
-          <div className="grid grid-cols-2 gap-4">
-            {renderField("Biological Cost / Side Effects", "biological_cost", "text-rose-500", "Toll exacted on the host body...")}
-            {renderField("Deployment Status", "deployment_status", "text-teal-500", "Active instances, failure rates, integration protocols...")}
-          </div>
-        );
-      case 'anomaly':
-        return (
-          <div className="grid grid-cols-2 gap-4">
-            {renderField("Manifestation Parameters", "manifestation", "text-amber-500", "Physical rules of the anomaly, triggers...")}
-            {renderField("Environmental / Subject Impact", "environmental_impact", "text-rose-500", "How it mutates or destroys its surroundings...")}
-          </div>
-        );
-      case 'event':
-        return (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex gap-4 col-span-2">
-              <InputField
-                label="Numeric Sequence (Order)"
-                value={selectedEntity.sequence_number}
-                onChange={(val) => handleUpdateEntity('sequence_number', val)}
-                colorClass="text-indigo-400"
-                placeholder="e.g., 10, 20"
-              />
-              <InputField
-                label="In-Universe Timestamp"
-                value={selectedEntity.timestamp}
-                onChange={(val) => handleUpdateEntity('timestamp', val)}
-                colorClass="text-slate-400"
-                placeholder="DD-MM-YYYY"
-              />
-            </div>
-            <div className="col-span-2">
-              {renderField("Involved Records", "involved_records", "text-rose-500", "List entities, personnel, or anomalies present...")}
-            </div>
-            <div className="col-span-2">
-              {renderField("Systemic Impact", "systemic_impact", "text-teal-500", "How this event permanently altered the facility or compliance metrics...")}
-            </div>
-          </div>
-        );
-      case 'memory':
-        return (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <InputField
-                label="Archival Timestamp"
-                value={selectedEntity.timestamp}
-                onChange={(val) => handleUpdateEntity('timestamp', val)}
-                colorClass="text-emerald-500"
-                placeholder="DD-MM-YYYY"
-              />
-            </div>
-            <div className="col-span-2">
-              {renderField("Unresolved Threads / Overseer Notes", "unresolved_threads", "text-amber-500", "Logic gaps the AI is currently tracking...")}
-            </div>
-          </div>
-        );
-      default: return null;
-    }
-  };
-
   return (
     <div className="flex h-screen bg-[#0a0a0c] text-slate-300 font-sans overflow-hidden selection:bg-rose-900/50">
 
@@ -1587,7 +1400,14 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               )}
 
               <div className="bg-black/20 p-5 rounded-lg border border-slate-800/50 shadow-inner">
-                {renderDynamicFields()}
+                <DynamicEntityFields
+                  selectedEntity={selectedEntity}
+                  handleUpdateEntity={handleUpdateEntity}
+                  getDetectedLinks={getDetectedLinks}
+                  setSelectedId={setSelectedId}
+                  handleProfileAudit={handleProfileAudit}
+                  isAuditingProfile={isAuditingProfile}
+                />
               </div>
             </div>
           </div>
