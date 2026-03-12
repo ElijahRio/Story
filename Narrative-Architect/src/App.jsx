@@ -1431,33 +1431,33 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <div className="flex-1 overflow-y-auto p-8 space-y-6">
               <TextAreaField
                 label="Base Definition / Purpose"
-                value={selectedEntity.description}
-                onChange={(val) => handleUpdateEntity('description', val)}
                 colorClass="text-slate-400"
-                placeholder="Define the core nature of this entity..."
                 detectedLinks={getDetectedLinks(selectedEntity.description, selectedEntity.id)}
                 onNavigate={setSelectedId}
+                value={selectedEntity.description || ''}
+                onChange={(e) => handleUpdateEntity('description', e.target.value)}
+                placeholder="Define the core nature of this entity..."
               />
 
               {selectedEntity.type !== 'event' && selectedEntity.type !== 'memory' && (
                 <div className="grid grid-cols-2 gap-4 bg-slate-900/40 p-4 rounded-lg border border-slate-800/80">
                   <TextAreaField
                     label="Required Inputs (Dependencies)"
-                    value={selectedEntity.systemic_inputs}
-                    onChange={(val) => handleUpdateEntity('systemic_inputs', val)}
                     colorClass="text-indigo-400"
-                    placeholder="Materials, tech, or biological fuel required to function..."
                     detectedLinks={getDetectedLinks(selectedEntity.systemic_inputs, selectedEntity.id)}
                     onNavigate={setSelectedId}
+                    value={selectedEntity.systemic_inputs || ''}
+                    onChange={(e) => handleUpdateEntity('systemic_inputs', e.target.value)}
+                    placeholder="Materials, tech, or biological fuel required to function..."
                   />
                   <TextAreaField
                     label="Systemic Outputs (Yield & Byproduct)"
-                    value={selectedEntity.systemic_outputs}
-                    onChange={(val) => handleUpdateEntity('systemic_outputs', val)}
                     colorClass="text-emerald-400"
-                    placeholder="What this produces, excretes, or forces into the system..."
                     detectedLinks={getDetectedLinks(selectedEntity.systemic_outputs, selectedEntity.id)}
                     onNavigate={setSelectedId}
+                    value={selectedEntity.systemic_outputs || ''}
+                    onChange={(e) => handleUpdateEntity('systemic_outputs', e.target.value)}
+                    placeholder="What this produces, excretes, or forces into the system..."
                   />
                 </div>
               )}

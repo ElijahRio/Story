@@ -8,16 +8,16 @@ const AssetPersonnelFields = ({ selectedEntity, renderField, handleUpdateEntity,
     <div className="col-span-2 flex gap-4 bg-black/40 p-3 rounded border border-slate-800/60">
       <InputField
         label="Birth / Assembly Date"
-        value={selectedEntity.birth_date}
-        onChange={(val) => handleUpdateEntity('birth_date', val)}
         colorClass="text-emerald-500"
+        value={selectedEntity.birth_date || ''}
+        onChange={(e) => handleUpdateEntity('birth_date', e.target.value)}
         placeholder="DD-MM-YYYY"
       />
       <InputField
         label="Death / Expiration Date"
-        value={selectedEntity.death_date}
-        onChange={(val) => handleUpdateEntity('death_date', val)}
         colorClass="text-rose-500"
+        value={selectedEntity.death_date || ''}
+        onChange={(e) => handleUpdateEntity('death_date', e.target.value)}
         placeholder="DD-MM-YYYY or Empty"
       />
     </div>
@@ -83,16 +83,16 @@ const EventFields = ({ selectedEntity, renderField, handleUpdateEntity }) => (
     <div className="flex gap-4 col-span-2">
       <InputField
         label="Numeric Sequence (Order)"
-        value={selectedEntity.sequence_number}
-        onChange={(val) => handleUpdateEntity('sequence_number', val)}
         colorClass="text-indigo-400"
+        value={selectedEntity.sequence_number || ''}
+        onChange={(e) => handleUpdateEntity('sequence_number', e.target.value)}
         placeholder="e.g., 10, 20"
       />
       <InputField
         label="In-Universe Timestamp"
-        value={selectedEntity.timestamp}
-        onChange={(val) => handleUpdateEntity('timestamp', val)}
         colorClass="text-slate-400"
+        value={selectedEntity.timestamp || ''}
+        onChange={(e) => handleUpdateEntity('timestamp', e.target.value)}
         placeholder="DD-MM-YYYY"
       />
     </div>
@@ -110,9 +110,9 @@ const MemoryFields = ({ selectedEntity, renderField, handleUpdateEntity }) => (
     <div className="col-span-2">
       <InputField
         label="Archival Timestamp"
-        value={selectedEntity.timestamp}
-        onChange={(val) => handleUpdateEntity('timestamp', val)}
         colorClass="text-emerald-500"
+        value={selectedEntity.timestamp || ''}
+        onChange={(e) => handleUpdateEntity('timestamp', e.target.value)}
         placeholder="DD-MM-YYYY"
       />
     </div>
@@ -136,12 +136,12 @@ const DynamicEntityFields = ({
     <TextAreaField
       key={field}
       label={label}
-      value={selectedEntity[field]}
-      onChange={(val) => handleUpdateEntity(field, val)}
       colorClass={colorClass}
-      placeholder={placeholder}
       detectedLinks={getDetectedLinks(selectedEntity[field], selectedEntity.id)}
       onNavigate={setSelectedId}
+      value={selectedEntity[field] || ''}
+      onChange={(e) => handleUpdateEntity(field, e.target.value)}
+      placeholder={placeholder}
     />
   );
 
