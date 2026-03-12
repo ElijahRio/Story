@@ -225,6 +225,19 @@ export default function App() {
     entities.filter(e => e.type === 'event').sort((a, b) => (Number(a.sequence_number) || 0) - (Number(b.sequence_number) || 0))
     , [entities]);
 
+  // ⚡ Bolt: Pre-process involved_records into arrays of lowercased strings to avoid repeated string splitting and toLowerCase calls in render
+  const timelineEventsProcessed = useMemo(() => {
+    return timelineEvents.map(event => {
+      const safeRecords = safeString(event.involved_records);
+      const involvedNames = safeRecords ? safeRecords.split(',').map(s => s.trim()) : [];
+      return {
+        ...event,
+        involvedNames,
+        involvedNamesLower: involvedNames.map(name => name.toLowerCase())
+      };
+    });
+  }, [timelineEvents]);
+
   // Pre-compile RegExp matchers to optimize the Advanced Link Detection Engine.
   // RegExp compilation inside the render loop was identified as a major performance bottleneck.
   // ⚡ Bolt: Use a ref Map to cache compiled matchers per entity.
@@ -272,6 +285,29 @@ export default function App() {
       };
     });
   }, [entities]);
+
+  // ⚡ Bolt: Memoize the loose string matching resolution for timeline entities to avoid O(N*M) lookups on every render
+  const timelineEntityMatchCache = useMemo(() => {
+    const cache = new Map();
+    // Get all unique lowercased names used in all events
+    const uniqueNames = new Set();
+    timelineEventsProcessed.forEach(event => {
+      event.involvedNamesLower.forEach(name => uniqueNames.add(name));
+    });
+
+    // Compute the match once for each unique name
+    uniqueNames.forEach(lowerName => {
+      const foundEntity = entityLinkDictionary.find(e => {
+        return e.nameLower === lowerName ||
+          e.nameLower.includes(lowerName) ||
+          lowerName.includes(e.nameLower);
+      });
+      if (foundEntity) {
+        cache.set(lowerName, foundEntity);
+      }
+    });
+    return cache;
+  }, [timelineEventsProcessed, entityLinkDictionary]);
 
   // --- Advanced Link Detection Engine ---
   // Memoized so it can be safely included in dependency arrays
@@ -1225,21 +1261,16 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <div className="flex-1 overflow-y-auto p-10 relative">
               <div className="absolute left-16 top-10 bottom-10 w-0.5 bg-indigo-900/30"></div>
 
-              {timelineEvents.length === 0 ? (
+              {timelineEventsProcessed.length === 0 ? (
                 <div className="text-center text-slate-600 font-mono mt-20">No events logged in the registry.</div>
               ) : (
                 <div className="space-y-12">
-                  {timelineEvents.map((event) => {
-                    const safeRecords = safeString(event.involved_records);
-                    const involvedNames = safeRecords ? safeRecords.split(',').map(s => s.trim()) : [];
-                    const renderedTags = involvedNames.map((name, idx) => {
-                      const lowerName = name.toLowerCase();
+                  {timelineEventsProcessed.map((event) => {
+                    const renderedTags = event.involvedNames.map((name, idx) => {
+                      const lowerName = event.involvedNamesLower[idx];
                       // ⚡ Bolt: Use pre-computed nameLower from entityLinkDictionary to avoid O(N*M) string allocations per render
-                      const foundEntity = entityLinkDictionary.find(e => {
-                        return e.nameLower === lowerName ||
-                          e.nameLower.includes(lowerName) ||
-                          lowerName.includes(e.nameLower);
-                      });
+                      // Utilize O(1) Map lookup rather than an O(N) Array.find over entityLinkDictionary on every iteration
+                      const foundEntity = timelineEntityMatchCache.get(lowerName);
 
                       let ageText = "";
                       let deathWarning = false;
