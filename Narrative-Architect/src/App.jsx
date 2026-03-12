@@ -252,9 +252,14 @@ export default function App() {
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
 
   // --- Derived State ---
+  // ⚡ Bolt: Convert O(N) Array.find to O(1) Map lookup to optimize entity selection and operations
+  const entitiesMap = useMemo(() => {
+    return new Map(entities.map(e => [e.id, e]));
+  }, [entities]);
+
   const selectedEntity = useMemo(() =>
-    entities.find(e => e.id === selectedId) || null
-    , [entities, selectedId]);
+    entitiesMap.get(selectedId) || null
+    , [entitiesMap, selectedId]);
 
   const filteredEntities = useMemo(() =>
     activeFilter === 'all'
@@ -521,8 +526,9 @@ export default function App() {
   const handleMerge = (sourceId, targetId) => {
     if (!sourceId || !targetId || sourceId === targetId) return;
 
-    const sourceEntity = entities.find(e => e.id === sourceId);
-    const targetEntity = entities.find(e => e.id === targetId);
+    // ⚡ Bolt: Use O(1) Map lookup instead of O(N) Array.find
+    const sourceEntity = entitiesMap.get(sourceId);
+    const targetEntity = entitiesMap.get(targetId);
 
     if (!sourceEntity || !targetEntity) return;
 
