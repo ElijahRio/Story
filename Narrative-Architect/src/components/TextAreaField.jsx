@@ -1,17 +1,15 @@
 import React from 'react';
 import { CornerDownRight } from 'lucide-react';
 
-const TextAreaField = ({ label, value, onChange, colorClass, placeholder, detectedLinks, onNavigate }) => {
+const TextAreaField = ({ label, colorClass, detectedLinks, onNavigate, ...textareaProps }) => {
   const id = React.useId();
   return (
     <div className="space-y-1.5 flex-1 flex flex-col">
       <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
       <textarea
         id={id}
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
         className="w-full h-28 bg-slate-950/50 border border-slate-800 rounded p-3 text-sm text-slate-300 focus:outline-none focus:border-slate-500 resize-none font-mono leading-relaxed shadow-inner"
-        placeholder={placeholder}
+        {...textareaProps}
       />
 
       {/* Dynamic Link Rendering - The Conveyor Belts */}

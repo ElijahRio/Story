@@ -1,6 +1,6 @@
 import React from 'react';
 
-const InputField = ({ label, value, onChange, colorClass, placeholder }) => {
+const InputField = ({ label, colorClass, ...inputProps }) => {
   const id = React.useId();
   return (
     <div className="space-y-1.5 flex-1">
@@ -8,10 +8,8 @@ const InputField = ({ label, value, onChange, colorClass, placeholder }) => {
       <input
         id={id}
         type="text"
-        value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
         className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-slate-500 font-mono shadow-inner"
-        placeholder={placeholder}
+        {...inputProps}
       />
     </div>
   );
