@@ -166,7 +166,6 @@ export default function App() {
   const [entities, setEntities] = useState(loadSavedData);
   const [selectedId, setSelectedId] = useState('timeline');
   const [activeFilter, setActiveFilter] = useState('all');
-  const [showBackupWarning, _setShowBackupWarning] = useState(false);
 
   // --- LLM State ---
   const [llmUrl, setLlmUrl] = useState('http://localhost:11434/api/chat');
@@ -1166,7 +1165,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
         <div className="p-3 border-t border-slate-800/60 bg-[#0a0a0c] flex gap-2">
           <button
             onClick={handleExport}
-            className={`flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border rounded text-[10px] uppercase tracking-widest transition-all ${showBackupWarning ? 'border-rose-500 text-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.3)] animate-pulse' : 'border-slate-800 text-slate-400 hover:text-white'}`}
+            className="flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border rounded text-[10px] uppercase tracking-widest transition-all border-slate-800 text-slate-400 hover:text-white"
             title="Save JSON to Desktop Folder"
           >
             <Download size={12} /> Backup
