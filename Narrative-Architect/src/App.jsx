@@ -23,7 +23,13 @@ const sanitizeEntity = (entity) => {
   const sanitized = { ...entity };
   for (const key in sanitized) {
     if (Object.prototype.hasOwnProperty.call(sanitized, key)) {
-      if (key !== 'id' && key !== 'type') {
+      if (key === 'involved_records') {
+        if (typeof sanitized[key] === 'string') {
+          sanitized[key] = sanitized[key].split(',').map(s => s.trim()).filter(Boolean);
+        } else if (!Array.isArray(sanitized[key])) {
+          sanitized[key] = [];
+        }
+      } else if (key !== 'id' && key !== 'type') {
         sanitized[key] = safeString(sanitized[key]);
       }
     }
@@ -94,7 +100,7 @@ const TextAreaField = ({ label, value, onChange, colorClass, placeholder, detect
       <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
       <textarea
         id={id}
-        value={value || ''}
+        value={safeString(value)}
         onChange={(e) => onChange(e.target.value)}
         className="w-full h-28 bg-slate-950/50 border border-slate-800 rounded p-3 text-sm text-slate-300 focus:outline-none focus:border-slate-500 resize-none font-mono leading-relaxed shadow-inner"
         placeholder={placeholder}
@@ -176,7 +182,7 @@ const initialEntities = [
     description: 'Initial deployment of the Judas Eye compliance tool resulted in violent biological rejection. The host body attempted to physically assimilate the hardware, leading to terminal cascading organ failure.',
     sequence_number: '10',
     timestamp: '05-03-2026',
-    involved_records: 'Ancillus, Prototype Asset #4, The Judas Eye (V1)',
+    involved_records: ['Ancillus', 'Prototype Asset #4', 'The Judas Eye (V1)'],
     systemic_impact: 'Led to the development of the corrosive tamper-defense mechanism in V2 and V3. Remains of Prototype #4 deposited into the Sepsis Stream.'
   },
   {
@@ -186,7 +192,7 @@ const initialEntities = [
     description: 'First successful administration of Compound S12 into Asset Dolly. Achieved initial dissolution of rigid skeletal/psychological frameworks, enabling hyper-compliance.',
     sequence_number: '20',
     timestamp: '12-11-2026',
-    involved_records: 'Ancillus, Dolly (Asteria), Compound S12',
+    involved_records: ['Ancillus', 'Dolly (Asteria)', 'Compound S12'],
     systemic_impact: 'Compliance Metric stabilized at 99.8%. First recorded instance of Dolly experiencing "Memory Blends".'
   }
 ];
@@ -370,7 +376,7 @@ export default function App() {
         entity.systemic_impact,
         entity.unresolved_threads,
         entity.ai_analysis
-      ].filter(Boolean).join(' ');
+      ].map(val => safeString(val)).filter(Boolean).join(' ');
 
       const links = getDetectedLinks(allText, entity.id);
       links.forEach(link => {
@@ -483,8 +489,14 @@ export default function App() {
   // --- Handlers: Entities ---
   const handleUpdateEntity = (field, value) => {
     if (!selectedEntity) return;
+
+    let processedValue = value;
+    if (field === 'involved_records' && typeof value === 'string') {
+      processedValue = value.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
     setEntities(entities.map(e =>
-      e.id === selectedId ? { ...e, [field]: value } : e
+      e.id === selectedId ? { ...e, [field]: processedValue } : e
     ));
   };
 
@@ -502,7 +514,7 @@ export default function App() {
     } else if (type === 'anomaly') {
       newEntity = { ...baseEntity, manifestation: '', environmental_impact: '' };
     } else if (type === 'event') {
-      newEntity = { ...baseEntity, sequence_number: '0', timestamp: 'DD-MM-YYYY', involved_records: '', systemic_impact: '' };
+      newEntity = { ...baseEntity, sequence_number: '0', timestamp: 'DD-MM-YYYY', involved_records: [], systemic_impact: '' };
     } else if (type === 'memory') {
       newEntity = { ...baseEntity, timestamp: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'), unresolved_threads: '' };
     }
@@ -590,15 +602,14 @@ export default function App() {
       if (e.id === sourceId) return null;
 
       // 3. Update timeline events to replace the source's name with the target's name
-      if (e.type === 'event' && e.involved_records) {
-        const records = safeString(e.involved_records).split(',').map(s => s.trim());
-        const hasSource = records.some(r => r.toLowerCase() === sourceNameBase.toLowerCase());
+      if (e.type === 'event' && Array.isArray(e.involved_records)) {
+        const hasSource = e.involved_records.some(r => r.toLowerCase() === sourceNameBase.toLowerCase());
 
         if (hasSource) {
           // Replace source name with target name, ensure no duplicates
           const updatedRecords = Array.from(new Set(
-            records.map(r => r.toLowerCase() === sourceNameBase.toLowerCase() ? targetNameBase : r)
-          )).join(', ');
+            e.involved_records.map(r => r.toLowerCase() === sourceNameBase.toLowerCase() ? targetNameBase : r)
+          ));
 
           return { ...e, involved_records: updatedRecords };
         }
@@ -1010,9 +1021,9 @@ Each object in the "audits" array must follow this schema:
     setIsAuditingProfile(true);
 
     const relatedEvents = timelineEvents.filter(e => {
-      if (!e.involved_records) return false;
+      if (!Array.isArray(e.involved_records)) return false;
       const baseName = entity.name.split(' (')[0].toLowerCase();
-      return e.involved_records.toLowerCase().includes(baseName);
+      return e.involved_records.some(r => r.toLowerCase().includes(baseName));
     });
 
     const systemContext = `You are a clinical, amoral, and ruthless Facility Overseer AI managing a dark, transgressive sci-fi horror environment. Your task is to analyze the structural, behavioral, and chronological profile of the requested biological Asset or Personnel.
@@ -1393,8 +1404,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               ) : (
                 <div className="space-y-12">
                   {timelineEvents.map((event) => {
-                    const safeRecords = safeString(event.involved_records);
-                    const involvedNames = safeRecords ? safeRecords.split(',').map(s => s.trim()) : [];
+                    const involvedNames = Array.isArray(event.involved_records) ? event.involved_records : [];
                     const renderedTags = involvedNames.map((name, idx) => {
                       const lowerName = name.toLowerCase();
                       // ⚡ Bolt: Use pre-computed nameLower from entityLinkDictionary to avoid O(N*M) string allocations per render
