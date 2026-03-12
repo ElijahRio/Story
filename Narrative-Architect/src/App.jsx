@@ -8,66 +8,13 @@ import {
   Check, X, Network
 } from 'lucide-react';
 import ForceGraph2D from 'react-force-graph-2d';
-
-// --- Utility Functions ---
-const safeString = (val) => {
-  if (val === null || val === undefined) return '';
-  if (typeof val === 'string') return val;
-  if (Array.isArray(val)) return val.join(', ');
-  if (typeof val === 'object') return JSON.stringify(val);
-  return String(val);
-};
-
-const sanitizeEntity = (entity) => {
-  if (!entity) return entity;
-  const sanitized = { ...entity };
-  for (const key in sanitized) {
-    if (Object.prototype.hasOwnProperty.call(sanitized, key)) {
-      if (key !== 'id' && key !== 'type') {
-        sanitized[key] = safeString(sanitized[key]);
-      }
-    }
-  }
-  return sanitized;
-};
-
-function calculateCosineSimilarity(vecA, vecB) {
-  let dotProduct = 0, normA = 0, normB = 0;
-  for (let i = 0; i < vecA.length; i++) {
-    dotProduct += vecA[i] * vecB[i];
-    normA += vecA[i] * vecA[i];
-    normB += vecB[i] * vecB[i];
-  }
-  if (normA === 0 || normB === 0) return 0;
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-}
-
-function parseDateString(dateStr) {
-  if (!dateStr) return null;
-  const str = safeString(dateStr);
-  const parts = str.match(/(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})/);
-  if (parts) {
-    if (parts[3].length === 4) {
-      return new Date(`${parts[3]}-${parts[2]}-${parts[1]}`);
-    } else if (parts[1].length === 4) {
-      return new Date(`${parts[1]}-${parts[2]}-${parts[3]}`);
-    }
-  }
-  const fb = new Date(str);
-  return isNaN(fb.getTime()) ? null : fb;
-}
-
-function getAge(birthStr, eventStr) {
-  const b = parseDateString(birthStr);
-  const e = parseDateString(eventStr);
-  if (!b || !e) return null;
-  let age = e.getFullYear() - b.getFullYear();
-  const m = e.getMonth() - b.getMonth();
-  if (m < 0 || (m === 0 && e.getDate() < b.getDate())) {
-    age--;
-  }
-  return age;
-}
+import {
+  safeString,
+  sanitizeEntity,
+  calculateCosineSimilarity,
+  parseDateString,
+  getAge
+} from './utils';
 
 // --- UI Components ---
 const InputField = ({ label, value, onChange, colorClass, placeholder }) => {
