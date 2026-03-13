@@ -1411,7 +1411,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 <button
                   aria-label="Merge Record"
                   onClick={() => setShowMergeUI(!showMergeUI)}
-                  className={`p-2 rounded transition-colors ${showMergeUI ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-600 hover:text-indigo-400 hover:bg-indigo-400/10'}`}
+                    className={`p-2 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${showMergeUI ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-600 hover:text-indigo-400 hover:bg-indigo-400/10'}`}
                   title="Merge Record"
                 >
                   <GitMerge size={16} />
@@ -1542,7 +1542,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
           <button
             aria-label="Settings"
             onClick={() => setShowSettings(!showSettings)}
-            className={`p-1.5 rounded transition-colors ${showSettings ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
+            className={`p-1.5 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${showSettings ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
           >
             <Settings size={14} />
           </button>
@@ -1669,7 +1669,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   aria-label="Send message"
                   onClick={handleSendMessage}
                   disabled={isTyping || !chatInput.trim()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-teal-600/20 hover:bg-teal-600/40 text-teal-500 disabled:text-slate-600 disabled:bg-transparent rounded transition-colors"
+                  title={isTyping ? "Engine is processing..." : !chatInput.trim() ? "Input required" : "Send query"}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-teal-600/20 hover:bg-teal-600/40 text-teal-500 disabled:text-slate-600 disabled:bg-transparent rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                 >
                   <Send size={16} />
                 </button>
