@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
 import {
   Database, Biohazard, UserCog, UserX, Cpu,
   Settings, Send, Trash2, Activity, FileWarning,
@@ -73,6 +73,34 @@ function getAge(birthStr, eventStr) {
 }
 
 // --- UI Components ---
+
+// ⚡ Bolt: Memoize the SidebarItem component to prevent O(N) re-renders
+// of the entire list (often 2000+ items) when the user types in text inputs.
+// The icon logic is contained within to avoid passing new JSX elements via props,
+// which would break React.memo's shallow comparison.
+const SidebarItem = memo(({ entity, isSelected, onClick }) => {
+  let icon;
+  switch (entity.type) {
+    case 'asset': icon = <UserX size={16} className="text-rose-500" />; break;
+    case 'personnel': icon = <UserCog size={16} className="text-slate-400" />; break;
+    case 'technology': icon = <Cpu size={16} className="text-teal-500" />; break;
+    case 'anomaly': icon = <Biohazard size={16} className="text-amber-500" />; break;
+    case 'event': icon = <Clock size={16} className="text-indigo-400" />; break;
+    case 'memory': icon = <HardDrive size={16} className="text-emerald-500" />; break;
+    default: icon = <FileWarning size={16} />;
+  }
+
+  return (
+    <button
+      onClick={() => onClick(entity.id)}
+      className={`w-full text-left px-3 py-2 rounded flex items-center gap-3 transition-all duration-200 ${isSelected ? 'bg-slate-800/80 text-white shadow-inner' : 'hover:bg-slate-900/50 text-slate-400'}`}
+    >
+      <span className="opacity-80">{icon}</span>
+      <span className="truncate text-sm font-medium">{entity.name}</span>
+    </button>
+  );
+});
+
 // --- Trauma of Compliance: Core Database ---
 const initialEntities = [
   {
@@ -1105,7 +1133,9 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
   };
 
   // --- Sub-Components ---
-  const renderIcon = (type) => {
+  // Memoized renderIcon to prevent breaking React.memo when passed as a prop
+  // or used elsewhere, though mostly handled directly inside SidebarItem now.
+  const renderIcon = React.useCallback((type) => {
     switch (type) {
       case 'asset': return <UserX size={16} className="text-rose-500" />;
       case 'personnel': return <UserCog size={16} className="text-slate-400" />;
@@ -1115,7 +1145,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
       case 'memory': return <HardDrive size={16} className="text-emerald-500" />;
       default: return <FileWarning size={16} />;
     }
-  };
+  }, []);
 
   return (
     <div className="flex h-screen bg-[#0a0a0c] text-slate-300 font-sans overflow-hidden selection:bg-rose-900/50">
@@ -1171,14 +1201,12 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
           <div className="h-px w-full bg-slate-800/60 mb-2"></div>
 
           {filteredEntities.map(entity => (
-            <button
+            <SidebarItem
               key={entity.id}
-              onClick={() => setSelectedId(entity.id)}
-              className={`w-full text-left px-3 py-2 rounded flex items-center gap-3 transition-all duration-200 ${selectedId === entity.id ? 'bg-slate-800/80 text-white shadow-inner' : 'hover:bg-slate-900/50 text-slate-400'}`}
-            >
-              <span className="opacity-80">{renderIcon(entity.type)}</span>
-              <span className="truncate text-sm font-medium">{entity.name}</span>
-            </button>
+              entity={entity}
+              isSelected={selectedId === entity.id}
+              onClick={setSelectedId}
+            />
           ))}
         </div>
 
