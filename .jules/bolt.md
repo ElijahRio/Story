@@ -1,10 +1,3 @@
-## 2024-03-12 - Bolt: Optimize Entity Lookups
-**Learning:** O(N) Array.find lookups become a significant bottleneck (e.g., ~687ms for 10k lookups on 5k entities) when scaled up, compared to O(1) Map lookups (~2ms). In React, caching a Map via useMemo when derived from an array provides immediate performance gains across the component scope.
-**Action:** When working with large datasets in React (like thousands of entities), proactively derive and memoize lookup Maps (using useMemo) instead of relying on Array.find for frequent lookups by ID, especially in performance-sensitive callbacks like handleMerge.
-
-## 2024-05-20 - Memoizing Render Loop Nested String Matching
-**Learning:** Found a major bottleneck where timeline events were triggering O(N*M) string allocations and array search calls during React's render loop because `involved_records` (a comma-separated string) was being split, lowercased, and mapped against `entityLinkDictionary` directly inside the render loop on every layout pass.
-**Action:** When working with nested array rendering, pre-process string representations (like splitting commas and lowercasing) into memoized data structures. Specifically, construct an O(1) cache (`Map`) using `useMemo` that maps the required sub-strings (like lowercase names) to their resolved entities outside the render loop, thus turning an O(N*M) render operation into an O(1) lookup.
-## 2024-05-18 - Optimized filter rendering with indexed array mapping
-**Learning:** Collapsing multiple `filter` operations on the same array structure in React components by doing a single pass mapped structure (e.g. `const entitiesByType = { asset: [], personnel: [] }`) avoids unnecessary redundant iterations, leading to about a 5% speed boost during complex entity filtering.
-**Action:** When working on similar O(N) filtering across multiple variables (like when computing different tabs or states based on type in large lists), pre-calculate the indexed subsets in a single loop `useMemo` block first.
+## 2024-03-13 - React.memo Shallow Comparison Failure with JSX Props
+**Learning:** Passing a dynamically generated JSX element (e.g. `<UserX />`) as a prop (like `icon={<UserX />}`) to a `React.memo` component completely breaks memoization. React treats new JSX objects as different references on every render, causing the shallow compare to fail and forcing a re-render of the entire O(N) list.
+**Action:** Always compute dynamic JSX icons *inside* the memoized component body using primitive props (like a string `type`), or pass statically defined/memoized icon components to preserve referential equality.
