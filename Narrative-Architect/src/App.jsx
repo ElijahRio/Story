@@ -1160,12 +1160,14 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap text-[10px] uppercase font-bold tracking-widest border-b border-slate-800/60 bg-[#0a0a0c]">
+        <div role="tablist" aria-label="Entity Types" className="flex flex-wrap text-[10px] uppercase font-bold tracking-widest border-b border-slate-800/60 bg-[#0a0a0c]">
           {['all', 'asset', 'personnel', 'technology', 'anomaly', 'event', 'memory'].map(f => (
             <button
               key={f}
+              role="tab"
+              aria-selected={activeFilter === f}
               onClick={() => setActiveFilter(f)}
-              className={`flex-1 min-w-[30%] py-2 text-center transition-colors ${activeFilter === f ? 'bg-slate-800/50 text-white border-b-2 border-teal-600' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900'}`}
+              className={`flex-1 min-w-[30%] py-2 text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:z-10 relative ${activeFilter === f ? 'bg-slate-800/50 text-white border-b-2 border-teal-600' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900'}`}
             >
               {f === 'technology' ? 'Tech' : f === 'personnel' ? 'Staff' : f === 'memory' ? 'Memory' : f}
             </button>
@@ -1587,16 +1589,20 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
         )}
 
         {/* Overseer Tabs */}
-        <div className="flex border-b border-slate-800/60 bg-[#0a0a0c]">
+        <div role="tablist" aria-label="Overseer Tabs" className="flex border-b border-slate-800/60 bg-[#0a0a0c]">
           <button
+            role="tab"
+            aria-selected={activeOverseerTab === 'terminal'}
             onClick={() => setActiveOverseerTab('terminal')}
-            className={`flex-1 py-2 text-[10px] uppercase font-bold tracking-widest transition-colors ${activeOverseerTab === 'terminal' ? 'bg-teal-950/20 text-teal-500 border-b-2 border-teal-500' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`flex-1 py-2 text-[10px] uppercase font-bold tracking-widest transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:z-10 relative ${activeOverseerTab === 'terminal' ? 'bg-teal-950/20 text-teal-500 border-b-2 border-teal-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
             Terminal
           </button>
           <button
+            role="tab"
+            aria-selected={activeOverseerTab === 'audit'}
             onClick={() => setActiveOverseerTab('audit')}
-            className={`flex-1 py-2 text-[10px] uppercase font-bold tracking-widest flex items-center justify-center gap-1.5 transition-colors ${activeOverseerTab === 'audit' ? 'bg-rose-950/20 text-rose-500 border-b-2 border-rose-500' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`flex-1 py-2 text-[10px] uppercase font-bold tracking-widest flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:z-10 relative ${activeOverseerTab === 'audit' ? 'bg-rose-950/20 text-rose-500 border-b-2 border-rose-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
             CI Audit {auditLogs.length > 0 && <span className="px-1.5 py-0.5 bg-rose-500 text-white rounded-full text-[8px] leading-none">{auditLogs.length}</span>}
           </button>
