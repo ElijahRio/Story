@@ -5,3 +5,7 @@
 ## 2024-05-15 - Explicit Focus States for Interactive Icons
 **Learning:** For interactive icon-only buttons (like Settings, Merge Record, Send Message) that use specific color schemes and lack text labels, ensuring visible focus rings (`focus-visible:ring-2 focus-visible:ring-[theme-color]`) and comprehensive `title` attributes significantly improves accessibility and clarity, especially when states like `disabled` come into play.
 **Action:** Always verify keyboard accessibility (`focus-visible` styles matching the theme color) and tooltips on icon-only interactive elements in future components.
+
+## 2024-05-25 - Focus Ring Clipping on Flex/Grid Tab Items
+**Learning:** When adding `focus-visible:ring` styles to dense UI elements (like flexed `flex-1` tab buttons), the focus ring is often clipped by adjacent elements.
+**Action:** Always combine `focus-visible:ring-2` with `focus-visible:z-10` and `relative` (if not already positioned) to ensure the focus ring visually overlays neighboring elements rather than getting hidden behind them.
