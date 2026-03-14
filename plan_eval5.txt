@@ -1,0 +1,161 @@
+Let's see the current network graph logic:
+
+```javascript
+  // --- Network Graph Computation ---
+  useEffect(() => {
+    if (selectedId !== 'network') return;
+
+    const nodes = entities.map(e => ({
+      id: e.id,
+      name: e.name,
+      type: e.type,
+      val: 2 // Node size
+    }));
+
+    const linksMap = new Map();
+
+    const addLinkWeight = (source, target, weight, type) => {
+      // ...
+    };
+
+    // 1. Text-based references
+    entities.forEach(entity => {
+      // O(N^2) operation!
+      // ...
+    });
+
+    // 2. Semantic References (read from pre-computed cache)
+    // ...
+```
+
+If we pull the `entities.forEach(entity => ...)` out into a `useMemo` that uses a cached `useRef`?
+```javascript
+  // ⚡ Bolt: Cache text-based links per entity to prevent O(N^2) string matching on every network render
+  const textLinksCacheRef = useRef({ namesHash: '', cache: new Map() });
+
+  const textBasedLinks = useMemo(() => {
+    // Generate a quick hash of all entity names to know when we MUST invalidate all matchers
+    let currentNamesHash = '';
+    for (let i = 0; i < entities.length; i++) {
+      currentNamesHash += entities[i].name + '|';
+    }
+
+    const cacheData = textLinksCacheRef.current;
+    if (cacheData.namesHash !== currentNamesHash) {
+      cacheData.cache.clear();
+      cacheData.namesHash = currentNamesHash;
+    }
+
+    const currentLinks = [];
+
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
+      const allText = [
+        entity.description,
+        entity.systemic_inputs,
+        entity.systemic_outputs,
+        entity.biological_alterations,
+        entity.attributes,
+        entity.liabilities,
+        entity.involved_records,
+        entity.systemic_impact,
+        entity.unresolved_threads,
+        entity.ai_analysis
+      ].filter(Boolean).join(' ');
+
+      let cachedEntry = cacheData.cache.get(entity.id);
+      if (cachedEntry && cachedEntry.text === allText) {
+        for (let j = 0; j < cachedEntry.linkIds.length; j++) {
+          currentLinks.push({ source: entity.id, target: cachedEntry.linkIds[j], weight: 1.5, type: 'text' });
+        }
+      } else {
+        const links = getDetectedLinks(allText, entity.id);
+        const linkIds = links.map(l => l.id);
+        cacheData.cache.set(entity.id, { text: allText, linkIds });
+        for (let j = 0; j < linkIds.length; j++) {
+          currentLinks.push({ source: entity.id, target: linkIds[j], weight: 1.5, type: 'text' });
+        }
+      }
+    }
+
+    return currentLinks;
+  }, [entities, getDetectedLinks]);
+```
+
+Wait! Is `getDetectedLinks` dependency changing every time?
+Yes! `getDetectedLinks` has `entityLinkDictionary` in its dependency array.
+And `entityLinkDictionary` returns a NEW array on EVERY `entities` change!
+So `getDetectedLinks` reference changes every time `entities` changes.
+So `useMemo` will rerun EVERY time `entities` changes.
+But inside the `useMemo`, `cachedEntry.text === allText` check will succeed for 99.9% of entities, meaning it skips `getDetectedLinks(allText, entity.id)` for them, completely bypassing the O(N^2) matching and making it O(N)!
+
+Wait, if we put `textBasedLinks` `useMemo` at the root component level, it will run on EVERY keystroke!
+Previously, the O(N^2) computation ONLY ran when `selectedId === 'network'`.
+If the user never clicks the network graph, it never runs!
+BUT when they DO click it, the UI freezes for 3 seconds.
+And if we put it at the root component level in a `useMemo`, it runs on EVERY keystroke, so the user might experience lag when typing (even O(N) might take 10-20ms, which is fine, but still).
+Actually, wait, if `getDetectedLinks` takes 30,000ms for 1000 entities, that's 30ms for 1 entity. So typing a character will take 30ms, which is perfectly smooth!
+But generating the FULL graph on first click takes 30,000ms (30 seconds)!
+By using the cache, the FIRST keystroke might take 30s?
+No! When the app loads, `entities` changes once. The `useMemo` will calculate it once (taking 3s for 2000 entities, or whatever), delaying initial render.
+Wait, we shouldn't delay the initial render if they are not viewing the graph!
+So maybe we should NOT put it at the root component `useMemo`.
+We can just put the caching logic INSIDE the `useEffect`!
+
+```javascript
+  // ⚡ Bolt: Cache text-based links per entity to prevent O(N^2) string matching on every network render
+  const textLinksCacheRef = useRef({ namesHash: '', cache: new Map() });
+
+  // --- Network Graph Computation ---
+  useEffect(() => {
+    if (selectedId !== 'network') return;
+
+    // ...
+    // 1. Text-based references
+    let currentNamesHash = '';
+    for (let i = 0; i < entities.length; i++) {
+      currentNamesHash += entities[i].name + '|';
+    }
+
+    const cacheData = textLinksCacheRef.current;
+    if (cacheData.namesHash !== currentNamesHash) {
+      cacheData.cache.clear();
+      cacheData.namesHash = currentNamesHash;
+    }
+
+    entities.forEach(entity => {
+      const allText = [
+        // ...
+      ].filter(Boolean).join(' ');
+
+      let cachedEntry = cacheData.cache.get(entity.id);
+      if (cachedEntry && cachedEntry.text === allText) {
+        cachedEntry.linkIds.forEach(targetId => {
+          addLinkWeight(entity.id, targetId, 1.5, 'text');
+        });
+      } else {
+        const links = getDetectedLinks(allText, entity.id);
+        const linkIds = links.map(l => l.id);
+        cacheData.cache.set(entity.id, { text: allText, linkIds });
+        linkIds.forEach(targetId => {
+          addLinkWeight(entity.id, targetId, 1.5, 'text');
+        });
+      }
+    });
+
+    // ...
+  }, [entities, getDetectedLinks, selectedId, semanticLinksCache, entitiesMap]);
+```
+This is brilliant!
+If the user switches from a normal view to `network` view, the `useEffect` runs.
+The first time it runs, it populates the cache.
+If the user then edits a single entity and returns to the `network` view, it ONLY recalculates that single entity's text links!
+This reduces the calculation from $O(N^2)$ to $O(N)$ when returning to the graph!
+Wait! Is this correct?
+If the user edits an entity, `entities` changes. Then they click `network`. The `useEffect` runs.
+The `currentNamesHash` is checked. If they only edited the DESCRIPTION, `currentNamesHash` hasn't changed!
+So the cache is STILL valid for all OTHER entities.
+It only recalculates the single edited entity!
+What if they edited the NAME?
+Then `currentNamesHash` changes, the cache is cleared, and it does a full recalculation. But name changes are rare compared to description typing!
+This is a MASSIVE performance win!

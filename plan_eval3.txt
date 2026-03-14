@@ -1,0 +1,170 @@
+So we need to optimize `NetworkGraph`'s text link mapping.
+Currently, the mapping is:
+```javascript
+    // 1. Text-based references
+    entities.forEach(entity => {
+      const allText = [
+        entity.description,
+        entity.systemic_inputs,
+        entity.systemic_outputs,
+        entity.biological_alterations,
+        entity.attributes,
+        entity.liabilities,
+        entity.involved_records,
+        entity.systemic_impact,
+        entity.unresolved_threads,
+        entity.ai_analysis
+      ].filter(Boolean).join(' ');
+
+      const links = getDetectedLinks(allText, entity.id);
+      links.forEach(link => {
+        // Base weight for text reference
+        addLinkWeight(entity.id, link.id, 1.5, 'text');
+      });
+    });
+```
+This is inside the `useEffect` that triggers when `entities, getDetectedLinks, selectedId, semanticLinksCache, entitiesMap` change.
+Wait! `getDetectedLinks` depends on `entityLinkDictionary`, which depends on `entities`.
+So ANY change to ANY entity (e.g. typing a description) changes `entities`, which re-runs `entityLinkDictionary`, which changes `getDetectedLinks`, which re-runs the `useEffect` and recalculates the ENTIRE network graph.
+
+Even though `selectedId` must be `'network'` for this code to run, and the user cannot edit entities while in `'network'` view... wait, if the user CANNOT edit entities in `'network'` view, then `entities` NEVER changes while in `'network'` view!
+
+Wait, is that true? Can the user edit an entity and then click "Network Graph View", which triggers this ONCE?
+Yes. And generating the graph for 2000 entities blocks the main thread for 2-3 seconds, causing the UI to freeze when you click the button!
+
+How can we optimize it?
+Instead of recalculating text links for ALL entities every time the user enters the Network view (or every time an entity changes), we can memoize the text link calculation PER ENTITY using a `useRef` cache, or we can use a `useMemo` for the text links that only updates what changed.
+
+Wait, if ANY entity's NAME changes, its regex matcher changes, which means it might now match texts it didn't match before.
+But entity names rarely change compared to descriptions.
+Can we optimize `getDetectedLinks`?
+What if we memoize the `textBasedLinksCache`?
+```javascript
+  const textLinksCacheRef = useRef(new Map());
+```
+Wait, if we just keep track of `allText` for an entity, and the list of matchers.
+If we hash the matchers? No, there are N matchers.
+
+What if we extract the `allText` generation and link detection into a `useMemo` outside the `useEffect`?
+```javascript
+  // ⚡ Bolt: Memoize text-based link detection per entity to avoid O(N^2) regex matching on every network graph render
+  const textBasedLinks = useMemo(() => {
+    // We want to avoid re-running N * N regex tests if only one entity's description changed.
+    // BUT since we are in React, we can just use a ref to cache the last known results.
+    // However, if entityLinkDictionary (the matchers) changes, we MUST re-run for ALL texts!
+    // But wait... entityLinkDictionary changes EVERY render because it's a useMemo mapping over entities.
+    // BUT the regex objects inside it are CACHED by regexCacheRef!
+  }, [entities, entityLinkDictionary]);
+```
+Wait! `entityLinkDictionary` returns a NEW array every time `entities` changes.
+But the `compiledData` objects inside it are stable if the entity name hasn't changed!
+So the `matchFullName` RegExp objects have the exact same reference if the name didn't change!
+
+If we use a `useRef` to cache the detected links for each entity, keyed by `entity.id`:
+```javascript
+  const textLinksCacheRef = useRef(new Map());
+
+  // Inside network graph computation, or in a useMemo:
+  const computeTextLinks = () => {
+    const cache = textLinksCacheRef.current;
+    const currentEntityIds = new Set(entities.map(e => e.id));
+
+    // Clean up cache
+    for (const id of cache.keys()) {
+      if (!currentEntityIds.has(id)) {
+        cache.delete(id);
+      }
+    }
+
+    // Did the matchers change?
+    // We can check if ANY entity's name changed.
+    // But that's hard to track.
+  }
+```
+
+Wait, what if we just use a `useMemo` to precompute the `allText` string for each entity?
+Even if we only precompute `allText`, `getDetectedLinks` still does N * N checks.
+
+How about we invert the loop?
+Instead of checking every entity's `allText` against every regex, we could use Aho-Corasick. But we can't use external libraries.
+
+Is there a way to make it O(N) or at least much faster?
+In Javascript, `String.prototype.match` or scanning text for words is faster.
+But wait! If the bottleneck is the N * N regex tests.
+If we cache the text links:
+```javascript
+  const textLinksCacheRef = useRef(new Map());
+  // Store { text, dictionaryVersion, links }
+  // How to track dictionaryVersion?
+  // We can hash the names of all entities! Or just keep a single string of all names joined.
+  // If the string of all names changes, we invalidate the ENTIRE cache.
+  // If an entity's allText changes, we only invalidate that entity's cache.
+```
+
+Let's do this:
+Create a `dictionaryHash` which is `entities.map(e => e.name).join('|')`.
+```javascript
+  // ⚡ Bolt: Create a stable hash of all entity names to track when global link invalidation is required
+  const dictionaryHash = useMemo(() => {
+    return entities.map(e => e.name).join('|');
+  }, [entities]);
+
+  // ⚡ Bolt: Memoize text-based link detection per entity.
+  // O(N^2) matching only runs fully when an entity's name changes (invalidating all)
+  // or runs for a single entity when only its text fields change.
+  const textLinksCacheRef = useRef({ hash: '', cache: new Map() });
+
+  const textBasedLinks = useMemo(() => {
+    const { hash, cache } = textLinksCacheRef.current;
+    const isFullRecalculation = hash !== dictionaryHash;
+
+    if (isFullRecalculation) {
+      cache.clear();
+      textLinksCacheRef.current.hash = dictionaryHash;
+    }
+
+    const currentLinks = [];
+
+    entities.forEach(entity => {
+      const allText = [
+        entity.description,
+        entity.systemic_inputs,
+        entity.systemic_outputs,
+        entity.biological_alterations,
+        entity.attributes,
+        entity.liabilities,
+        entity.involved_records,
+        entity.systemic_impact,
+        entity.unresolved_threads,
+        entity.ai_analysis
+      ].filter(Boolean).join(' ');
+
+      let cached = cache.get(entity.id);
+      if (cached && cached.text === allText && !isFullRecalculation) {
+         cached.links.forEach(targetId => {
+           currentLinks.push({ source: entity.id, target: targetId, weight: 1.5, type: 'text' });
+         });
+         return;
+      }
+
+      // Compute
+      const links = getDetectedLinks(allText, entity.id);
+      const linkIds = links.map(l => l.id);
+
+      cache.set(entity.id, { text: allText, links: linkIds });
+
+      linkIds.forEach(targetId => {
+        currentLinks.push({ source: entity.id, target: targetId, weight: 1.5, type: 'text' });
+      });
+    });
+
+    return currentLinks;
+  }, [entities, getDetectedLinks, dictionaryHash]);
+```
+Then in the `useEffect`:
+```javascript
+    // 1. Text-based references
+    textBasedLinks.forEach(link => {
+      addLinkWeight(link.source, link.target, link.weight, link.type);
+    });
+```

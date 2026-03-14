@@ -1,3 +1,7 @@
 ## 2024-03-13 - React.memo Shallow Comparison Failure with JSX Props
 **Learning:** Passing a dynamically generated JSX element (e.g. `<UserX />`) as a prop (like `icon={<UserX />}`) to a `React.memo` component completely breaks memoization. React treats new JSX objects as different references on every render, causing the shallow compare to fail and forcing a re-render of the entire O(N) list.
 **Action:** Always compute dynamic JSX icons *inside* the memoized component body using primitive props (like a string `type`), or pass statically defined/memoized icon components to preserve referential equality.
+
+## 2025-03-13 - Network Graph O(N^2) Memoization
+**Learning:** In applications like 'Narrative-Architect' that rely on dynamic text-based relationship mapping for graph nodes, calculating matches using RegExp tests on every key combination is extremely expensive (`O(N^2)` string operations). Calling `getDetectedLinks` inside the main render loop causes catastrophic thread-blocking when the list of entities grows.
+**Action:** Lift the `O(N^2)` computation inside `useMemo` or a dedicated `useRef` cache within `useEffect`. To avoid `O(N^2)` evaluation on single-entity edits (like typing), cache the mapped links per entity ID and conditionally recompute ONLY for entities whose source string changed. To safely handle systemic changes (like renaming an entity which alters all other entities' link detections), use a cheap `namesHash` string join (`O(N)`) to completely invalidate the cache when a root change occurs.
