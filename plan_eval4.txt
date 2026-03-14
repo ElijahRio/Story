@@ -1,0 +1,36 @@
+Wait, `useMemo` for `textBasedLinks` solves the issue where clicking "Network Graph View" takes 3 seconds?
+If the user loads the app, `textBasedLinks` is computed in the background, not blocking the main thread during navigation!
+Wait, `useMemo` runs synchronously during the render! So it WILL block the main thread.
+But if it only runs when `entities` changes, the FIRST time the app loads it takes 3 seconds, but when you click "Network Graph View" it's INSTANT!
+Actually, the user edits entities while in Timeline or Asset view. Every keystroke updates `entities`.
+If `textBasedLinks` is an $O(N^2)$ computation that runs on every keystroke, then typing a description will lag terribly by 3 seconds per keystroke!
+
+Let's test this.
+If the memoization logic checks `hash !== dictionaryHash`, and `dictionaryHash` only changes when a NAME changes, then typing a DESCRIPTION will ONLY recompute `getDetectedLinks` for that SINGLE entity!
+$1 * N = O(N)$ instead of $O(N^2)$.
+So typing a description will take $30 \text{ms}$, which is fine!
+Wait! Does `dictionaryHash` recompute? `entities.map(e => e.name).join('|')` is an $O(N)$ string join, which takes $1 \text{ms}$ for 2000 entities.
+
+Let's verify this cache approach.
+```javascript
+  // ⚡ Bolt: Cache text-based links per entity to prevent O(N^2) string matching on every keystroke
+  const textLinksCacheRef = useRef({ version: 0, namesHash: '', map: new Map() });
+```
+
+Actually, `getDetectedLinks` is called in `DynamicEntityFields.jsx` for individual text fields too!
+```javascript
+    <TextAreaField
+      key={field}
+      label={label}
+      colorClass={colorClass}
+      detectedLinks={getDetectedLinks(selectedEntity[field], selectedEntity.id)}
+      // ...
+    />
+```
+So `getDetectedLinks` is heavily used.
+It is an $O(N)$ operation. Calling it for 5 fields of the selected entity is $5 \times O(N)$, which is fast enough for typing (a few ms).
+The bottleneck is calling it for ALL entities when calculating the network graph!
+
+So memoizing the `NetworkGraph`'s text link calculations is the perfect fix.
+
+Let's create the plan.

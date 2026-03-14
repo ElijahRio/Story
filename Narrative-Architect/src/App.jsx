@@ -416,6 +416,9 @@ export default function App() {
     return cache;
   }, [networkEmbeddings]);
 
+  // ⚡ Bolt: Cache text-based links per entity to prevent O(N^2) string matching on every network render
+  const textLinksCacheRef = useRef({ namesHash: '', cache: new Map() });
+
   // --- Network Graph Computation ---
   useEffect(() => {
     if (selectedId !== 'network') return;
@@ -444,6 +447,17 @@ export default function App() {
     };
 
     // 1. Text-based references
+    let currentNamesHash = '';
+    for (let i = 0; i < entities.length; i++) {
+      currentNamesHash += entities[i].name + '|';
+    }
+
+    const cacheData = textLinksCacheRef.current;
+    if (cacheData.namesHash !== currentNamesHash) {
+      cacheData.cache.clear();
+      cacheData.namesHash = currentNamesHash;
+    }
+
     entities.forEach(entity => {
       const allText = [
         entity.description,
@@ -458,11 +472,19 @@ export default function App() {
         entity.ai_analysis
       ].filter(Boolean).join(' ');
 
-      const links = getDetectedLinks(allText, entity.id);
-      links.forEach(link => {
-        // Base weight for text reference
-        addLinkWeight(entity.id, link.id, 1.5, 'text');
-      });
+      let cachedEntry = cacheData.cache.get(entity.id);
+      if (cachedEntry && cachedEntry.text === allText) {
+        cachedEntry.linkIds.forEach(targetId => {
+          addLinkWeight(entity.id, targetId, 1.5, 'text');
+        });
+      } else {
+        const links = getDetectedLinks(allText, entity.id);
+        const linkIds = links.map(l => l.id);
+        cacheData.cache.set(entity.id, { text: allText, linkIds });
+        linkIds.forEach(targetId => {
+          addLinkWeight(entity.id, targetId, 1.5, 'text');
+        });
+      }
     });
 
     // 2. Semantic References (read from pre-computed cache)
