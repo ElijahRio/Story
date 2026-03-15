@@ -371,21 +371,50 @@ export default function App() {
   }, [timelineEventsProcessed, entityLinkDictionary]);
 
   // --- Advanced Link Detection Engine ---
+  // ⚡ Bolt: Compute global validation hash once per render.
+  // This string joining is O(N) and prevents doing it inside `getDetectedLinks` which would be O(N^2).
+  const globalNamesHash = useMemo(() => {
+    let hash = '';
+    for (let i = 0; i < entityLinkDictionary.length; i++) {
+        hash += entityLinkDictionary[i].name + '|';
+    }
+    return hash;
+  }, [entityLinkDictionary]);
+
+  // ⚡ Bolt: Added a useRef cache.
+  // Caches the resulting array iteration per entity ID based on their current text.
+  // Prevents memory leak by only storing the *current* state of the text for that entity.
+  const detectedLinksCacheRef = useRef({ hash: '', cache: new Map() });
+
   // Memoized so it can be safely included in dependency arrays
   const getDetectedLinks = React.useCallback((text, currentId) => {
     const safeText = safeString(text);
     if (!safeText) return [];
+
+    if (detectedLinksCacheRef.current.hash !== globalNamesHash) {
+        detectedLinksCacheRef.current.cache.clear();
+        detectedLinksCacheRef.current.hash = globalNamesHash;
+    }
+
+    const cachedEntry = detectedLinksCacheRef.current.cache.get(currentId);
+    if (cachedEntry && cachedEntry.text === safeText) {
+        return cachedEntry.result;
+    }
+
     const lowerText = safeText.toLowerCase();
 
     // ⚡ Bolt: Use the memoized entity dictionary to skip RegExp instantiation during rendering.
-    return entityLinkDictionary.filter(e => {
+    const result = entityLinkDictionary.filter(e => {
       if (e.id === currentId) return false;
 
       return e.matchFullName.test(lowerText) ||
              (e.matchBaseName && e.matchBaseName.test(lowerText)) ||
              (e.matchStrippedName && e.matchStrippedName.test(lowerText));
     });
-  }, [entityLinkDictionary]);
+
+    detectedLinksCacheRef.current.cache.set(currentId, { text: safeText, result });
+    return result;
+  }, [entityLinkDictionary, globalNamesHash]);
 
   // ⚡ Bolt: Extract O(N^2) semantic similarity loop into a separate useMemo
   // This prevents recalculating cosine similarity for all pairs on every keystroke
