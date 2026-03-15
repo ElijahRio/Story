@@ -9,3 +9,7 @@
 ## 2024-05-25 - Focus Ring Clipping on Flex/Grid Tab Items
 **Learning:** When adding `focus-visible:ring` styles to dense UI elements (like flexed `flex-1` tab buttons), the focus ring is often clipped by adjacent elements.
 **Action:** Always combine `focus-visible:ring-2` with `focus-visible:z-10` and `relative` (if not already positioned) to ensure the focus ring visually overlays neighboring elements rather than getting hidden behind them.
+
+## 2024-05-26 - Dynamic Focus Rings for Themed Entity Lists
+**Learning:** When dealing with dynamic lists of entities that each have their own theme color (e.g. tech is teal, assets are rose), applying a generic focus ring color can look disjointed. Using dynamic Tailwind classes (e.g. `focus-visible:ring-${themeColor}-500`) along with `focus:outline-none focus-visible:ring-2` creates a much more cohesive and premium keyboard navigation experience that respects the app's design language.
+**Action:** When adding focus states to dynamically themed elements, attempt to inherit or match the element's specific theme color for the focus ring rather than defaulting to a standard generic color.

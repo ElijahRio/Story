@@ -93,7 +93,16 @@ const SidebarItem = memo(({ entity, isSelected, onClick }) => {
   return (
     <button
       onClick={() => onClick(entity.id)}
-      className={`w-full text-left px-3 py-2 rounded flex items-center gap-3 transition-all duration-200 ${isSelected ? 'bg-slate-800/80 text-white shadow-inner' : 'hover:bg-slate-900/50 text-slate-400'}`}
+      aria-current={isSelected ? "true" : undefined}
+      className={`w-full text-left px-3 py-2 rounded flex items-center gap-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 ${
+        entity.type === 'asset' ? 'focus-visible:ring-rose-500' :
+        entity.type === 'personnel' ? 'focus-visible:ring-slate-400' :
+        entity.type === 'technology' ? 'focus-visible:ring-teal-500' :
+        entity.type === 'anomaly' ? 'focus-visible:ring-amber-500' :
+        entity.type === 'event' ? 'focus-visible:ring-indigo-400' :
+        entity.type === 'memory' ? 'focus-visible:ring-emerald-500' :
+        'focus-visible:ring-slate-400'
+      } ${isSelected ? 'bg-slate-800/80 text-white shadow-inner' : 'hover:bg-slate-900/50 text-slate-400'}`}
     >
       <span className="opacity-80">{icon}</span>
       <span className="truncate text-sm font-medium">{entity.name}</span>
@@ -1201,21 +1210,24 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
           <div className="space-y-1 mb-3">
             <button
               onClick={() => setSelectedId(null)}
-              className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 ${selectedId === null ? 'bg-teal-900/20 text-teal-400 shadow-inner border-teal-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
+              aria-current={selectedId === null ? "true" : undefined}
+              className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${selectedId === null ? 'bg-teal-900/20 text-teal-400 shadow-inner border-teal-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
             >
               <span className="opacity-80"><Search size={14} /></span>
               <span className="truncate text-xs font-bold uppercase tracking-wider">Global Search View</span>
             </button>
             <button
               onClick={() => setSelectedId('timeline')}
-              className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 ${selectedId === 'timeline' ? 'bg-indigo-900/20 text-indigo-400 shadow-inner border-indigo-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
+              aria-current={selectedId === 'timeline' ? "true" : undefined}
+              className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${selectedId === 'timeline' ? 'bg-indigo-900/20 text-indigo-400 shadow-inner border-indigo-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
             >
               <span className="opacity-80"><Clock size={14} /></span>
               <span className="truncate text-xs font-bold uppercase tracking-wider">Master Timeline View</span>
             </button>
             <button
               onClick={() => setSelectedId('network')}
-              className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 ${selectedId === 'network' ? 'bg-rose-900/20 text-rose-400 shadow-inner border-rose-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
+              aria-current={selectedId === 'network' ? "true" : undefined}
+              className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${selectedId === 'network' ? 'bg-rose-900/20 text-rose-400 shadow-inner border-rose-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
             >
               <span className="opacity-80"><Network size={14} /></span>
               <span className="truncate text-xs font-bold uppercase tracking-wider">Network Graph View</span>
