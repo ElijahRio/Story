@@ -365,13 +365,27 @@ export default function App() {
       event.involvedNamesLower.forEach(name => uniqueNames.add(name));
     });
 
+    // Create an O(1) lookup map for exact matches
+    const exactMatchMap = new Map();
+    for (let i = 0; i < entityLinkDictionary.length; i++) {
+      const entity = entityLinkDictionary[i];
+      if (!exactMatchMap.has(entity.nameLower)) {
+        exactMatchMap.set(entity.nameLower, entity);
+      }
+    }
+
     // Compute the match once for each unique name
     uniqueNames.forEach(lowerName => {
-      const foundEntity = entityLinkDictionary.find(e => {
-        return e.nameLower === lowerName ||
-          e.nameLower.includes(lowerName) ||
-          lowerName.includes(e.nameLower);
-      });
+      // Fast path: O(1) exact match lookup
+      let foundEntity = exactMatchMap.get(lowerName);
+
+      // Slow path: O(N) partial match fallback
+      if (!foundEntity) {
+        foundEntity = entityLinkDictionary.find(e => {
+          return e.nameLower.includes(lowerName) || lowerName.includes(e.nameLower);
+        });
+      }
+
       if (foundEntity) {
         cache.set(lowerName, foundEntity);
       }
