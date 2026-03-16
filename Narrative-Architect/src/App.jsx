@@ -1790,7 +1790,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
 
                     <button
                       onClick={() => resolveAudit(log.id)}
-                      className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 rounded text-[9px] text-emerald-500 uppercase tracking-widest transition-all"
+                      className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 rounded text-[9px] text-emerald-500 uppercase tracking-widest transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                     >
                       Resolve
                     </button>

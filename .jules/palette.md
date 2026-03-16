@@ -13,3 +13,6 @@
 ## 2024-05-26 - Dynamic Focus Rings for Themed Entity Lists
 **Learning:** When dealing with dynamic lists of entities that each have their own theme color (e.g. tech is teal, assets are rose), applying a generic focus ring color can look disjointed. Using dynamic Tailwind classes (e.g. `focus-visible:ring-${themeColor}-500`) along with `focus:outline-none focus-visible:ring-2` creates a much more cohesive and premium keyboard navigation experience that respects the app's design language.
 **Action:** When adding focus states to dynamically themed elements, attempt to inherit or match the element's specific theme color for the focus ring rather than defaulting to a standard generic color.
+## 2024-05-27 - Keyboard Focus on Hover-Only Elements
+**Learning:** Elements that rely solely on `opacity-0 group-hover:opacity-100` for visibility (like the "Resolve" button in the CI Audit log) become completely invisible keyboard traps. When users tab to them, they receive focus but remain `opacity-0`.
+**Action:** Always ensure that any element using hover-based visibility also includes `focus-visible:opacity-100` alongside proper focus rings (e.g., `focus:outline-none focus-visible:ring-2`) so keyboard users can actually see what they are focusing on.
