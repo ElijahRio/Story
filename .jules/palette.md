@@ -16,3 +16,6 @@
 ## 2024-05-27 - Keyboard Focus on Hover-Only Elements
 **Learning:** Elements that rely solely on `opacity-0 group-hover:opacity-100` for visibility (like the "Resolve" button in the CI Audit log) become completely invisible keyboard traps. When users tab to them, they receive focus but remain `opacity-0`.
 **Action:** Always ensure that any element using hover-based visibility also includes `focus-visible:opacity-100` alongside proper focus rings (e.g., `focus:outline-none focus-visible:ring-2`) so keyboard users can actually see what they are focusing on.
+## 2024-03-16 - Accessible Custom Interactive Elements
+**Learning:** When using generic block elements like `<div>` or `<span>` as clickable cards or tags (like in the Timeline view), they completely drop out of keyboard navigation. Adding `onClick` is insufficient for accessibility.
+**Action:** Always convert inline interactive tags (like `<span>`) to `<button type="button">`. For complex, block-level interactive cards (like a `<div>` acting as a button), add `role="button"`, `tabIndex={0}`, an explicit `onKeyDown` handler for 'Enter' and 'Space' keys, and ensure Tailwind `focus-visible` ring utilities are applied for visual feedback during keyboard navigation.
