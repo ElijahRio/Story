@@ -9,3 +9,7 @@
 ## 2025-03-13 - Cross-Entity Mapping Thread Blocking in React Render Loop
 **Learning:** In applications like 'Narrative-Architect', relying on large O(N^2) dynamic computations inside the render loop for cross-entity link detection (detecting references to an entity within another entity's text fields) leads to main-thread blocking during frequent state updates like typing.
 **Action:** Extract the heavy calculation into a `useRef` cache. Instead of computing on every render, cache the compiled matchers per entity. Use a global validation hash (e.g., concatenated entity names) to trigger a full invalidation only when a systemic rule changes (like renaming an entity), avoiding cache invalidation during minor text edits.
+
+## 2025-03-08 - UseMemo caching with array mapping mapping anti-pattern
+**Learning:** In React, if a `useMemo` block maps over a large array and returns a new object on each iteration (e.g. `entities.map(e => ({...e, ...cachedData}))`), it will break referential equality for every item in the array, even if the underlying data didn't change. This causes O(N) object allocations on every render.
+**Action:** Always cache and return the exact same resulting object reference if the inputs (like the entity) haven't changed, e.g. `if (cached && cached._entity === e) return cached._dictEntry;`. This prevents memory bloat and massive GC pauses on every keystroke.
