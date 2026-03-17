@@ -330,9 +330,11 @@ export default function App() {
       const cached = regexCacheRef.current.get(e.id);
       const fullName = safeString(e.name).toLowerCase();
 
-      // Return from cache if the name hasn't changed
-      if (cached && cached.nameLower === fullName) {
-        return { ...e, ...cached };
+      // ⚡ Bolt: Return the EXACT cached object if the original entity object hasn't changed.
+      // Returning `{ ...e, ...cached }` on every render causes O(N) new object allocations (often 2000+)
+      // on every keystroke when typing in a single entity, causing massive GC pauses.
+      if (cached && cached.nameLower === fullName && cached._entity === e) {
+        return cached._dictEntry;
       }
 
       // Compile and cache new matchers if name changed or entity is new
@@ -346,13 +348,19 @@ export default function App() {
         matchStrippedName: strippedName.length > 2 ? new RegExp(`\\b${escapeRegExp(strippedName)}\\b`, 'i') : null,
       };
 
-      regexCacheRef.current.set(e.id, compiledData);
-
       // Crucial: Must spread original entity (...e) to prevent data loss in downstream components
-      return {
+      const dictEntry = {
         ...e,
         ...compiledData,
       };
+
+      // Cache the original entity reference and the final merged object
+      compiledData._entity = e;
+      compiledData._dictEntry = dictEntry;
+
+      regexCacheRef.current.set(e.id, compiledData);
+
+      return dictEntry;
     });
   }, [entities]);
 
