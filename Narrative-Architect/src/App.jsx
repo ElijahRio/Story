@@ -1570,7 +1570,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   id="merge-target"
                   value={mergeTargetId}
                   onChange={(e) => setMergeTargetId(e.target.value)}
-                  className="flex-1 bg-[#0a0a0c] border border-indigo-900/50 rounded p-1.5 text-xs text-slate-300 outline-none focus:border-indigo-500 font-mono"
+                  className="flex-1 bg-[#0a0a0c] border border-indigo-900/50 rounded p-1.5 text-xs text-slate-300 outline-none focus:border-indigo-500 font-mono focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
                   <option value="">Select target record to keep...</option>
                   {entities.filter(e => e.id !== selectedEntity.id).map(e => (
@@ -1580,7 +1580,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 <button
                   onClick={() => handleMerge(selectedEntity.id, mergeTargetId)}
                   disabled={!mergeTargetId}
-                  className="px-4 py-1.5 bg-indigo-900/40 hover:bg-indigo-800/60 disabled:opacity-50 disabled:hover:bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-[9px] uppercase tracking-widest rounded transition-colors"
+                  className="px-4 py-1.5 bg-indigo-900/40 hover:bg-indigo-800/60 disabled:opacity-50 disabled:hover:bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-[9px] uppercase tracking-widest rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
                   Confirm Merge
                 </button>
