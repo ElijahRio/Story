@@ -427,9 +427,18 @@ export default function App() {
         detectedLinksCacheRef.current.hash = globalNamesHash;
     }
 
-    const cachedEntry = detectedLinksCacheRef.current.cache.get(currentId);
-    if (cachedEntry && cachedEntry.text === safeText) {
-        return cachedEntry.result;
+    // ⚡ Bolt: Store a nested Map per entity ID to cache multiple text fields simultaneously.
+    // getDetectedLinks is called multiple times per entity (e.g. description, systemic_inputs),
+    // and caching by ID alone caused cache thrashing and constant O(N) regex re-evaluations.
+    let entityCache = detectedLinksCacheRef.current.cache.get(currentId);
+    if (!entityCache) {
+      entityCache = new Map();
+      detectedLinksCacheRef.current.cache.set(currentId, entityCache);
+    }
+
+    const cachedResult = entityCache.get(safeText);
+    if (cachedResult) {
+        return cachedResult;
     }
 
     const lowerText = safeText.toLowerCase();
@@ -443,7 +452,7 @@ export default function App() {
              (e.matchStrippedName && e.matchStrippedName.test(lowerText));
     });
 
-    detectedLinksCacheRef.current.cache.set(currentId, { text: safeText, result });
+    entityCache.set(safeText, result);
     return result;
   }, [entityLinkDictionary, globalNamesHash]);
 
