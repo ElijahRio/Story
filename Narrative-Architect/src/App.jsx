@@ -72,6 +72,31 @@ function getAge(birthStr, eventStr) {
   return age;
 }
 
+function extractJsonFromText(rawText) {
+  if (!rawText || typeof rawText !== 'string') return "";
+
+  const firstBrace = rawText.indexOf('{');
+  const lastBrace = rawText.lastIndexOf('}');
+  const firstBracket = rawText.indexOf('[');
+  const lastBracket = rawText.lastIndexOf(']');
+
+  let firstIndex = -1;
+  if (firstBrace !== -1 && firstBracket !== -1) firstIndex = Math.min(firstBrace, firstBracket);
+  else if (firstBrace !== -1) firstIndex = firstBrace;
+  else if (firstBracket !== -1) firstIndex = firstBracket;
+
+  let lastIndex = -1;
+  if (lastBrace !== -1 && lastBracket !== -1) lastIndex = Math.max(lastBrace, lastBracket);
+  else if (lastBrace !== -1) lastIndex = lastBrace;
+  else if (lastBracket !== -1) lastIndex = lastBracket;
+
+  if (firstIndex !== -1 && lastIndex !== -1) {
+    return rawText.substring(firstIndex, lastIndex + 1);
+  }
+
+  return rawText;
+}
+
 // --- UI Components ---
 
 // ⚡ Bolt: Memoize the SidebarItem component to prevent O(N) re-renders
@@ -933,11 +958,7 @@ You MUST output strictly a JSON object following this exact schema. Do NOT outpu
       let rawText = data.message?.content || "";
 
       // Aggressive JSON extraction
-      const firstBrace = rawText.indexOf('{');
-      const lastBrace = rawText.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1) {
-        rawText = rawText.substring(firstBrace, lastBrace + 1);
-      }
+      rawText = extractJsonFromText(rawText);
 
       const parsed = JSON.parse(rawText) || {};
 
@@ -1012,11 +1033,7 @@ Each object in the "entities" array must strictly follow this schema:
       let rawText = data.message?.content || "";
 
       // Aggressive JSON extraction
-      const firstBrace = rawText.indexOf('{');
-      const lastBrace = rawText.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1) {
-        rawText = rawText.substring(firstBrace, lastBrace + 1);
-      }
+      rawText = extractJsonFromText(rawText);
 
       let parsedData = JSON.parse(rawText);
       let extractedEntities = parsedData.entities || parsedData;
@@ -1122,24 +1139,7 @@ Each object in the "audits" array must follow this schema:
       let rawText = data.message?.content || "";
 
       // Aggressive JSON extraction
-      const firstBrace = rawText.indexOf('{');
-      const lastBrace = rawText.lastIndexOf('}');
-      const firstBracket = rawText.indexOf('[');
-      const lastBracket = rawText.lastIndexOf(']');
-
-      let firstIndex = -1;
-      if (firstBrace !== -1 && firstBracket !== -1) firstIndex = Math.min(firstBrace, firstBracket);
-      else if (firstBrace !== -1) firstIndex = firstBrace;
-      else if (firstBracket !== -1) firstIndex = firstBracket;
-
-      let lastIndex = -1;
-      if (lastBrace !== -1 && lastBracket !== -1) lastIndex = Math.max(lastBrace, lastBracket);
-      else if (lastBrace !== -1) lastIndex = lastBrace;
-      else if (lastBracket !== -1) lastIndex = lastBracket;
-
-      if (firstIndex !== -1 && lastIndex !== -1) {
-        rawText = rawText.substring(firstIndex, lastIndex + 1);
-      }
+      rawText = extractJsonFromText(rawText);
 
       let parsedData = JSON.parse(rawText);
       let extractedAudits = parsedData.audits || parsedData;
