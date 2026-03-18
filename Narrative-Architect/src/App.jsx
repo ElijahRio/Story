@@ -5,7 +5,7 @@ import {
   Download, Upload, Search, Clock, GitCommit,
   Bug, CheckCircle, AlertTriangle, Bell, Calendar,
   CornerDownRight, Fingerprint, HardDrive, BrainCircuit, GitMerge,
-  Check, X, Network
+  Check, X, Network, Route, Plus
 } from 'lucide-react';
 import ForceGraph2D from 'react-force-graph-2d';
 import InputField from './components/InputField';
@@ -283,6 +283,10 @@ export default function App() {
       fgRef.current.d3ReheatSimulation();
     }
   }, [graphData, selectedId]);
+
+  // Metro State
+  const [selectedMetroIds, setSelectedMetroIds] = useState([]);
+  const [metroAddTargetId, setMetroAddTargetId] = useState('');
 
   // --- Derived State ---
   // ⚡ Bolt: Use a single O(N) pass to build both an O(1) ID Map and a type index.
@@ -597,6 +601,139 @@ export default function App() {
       links: Array.from(linksMap.values())
     });
   }, [entities, getDetectedLinks, selectedId, semanticLinksCache, entitiesMap]);
+
+  // --- Metro Timeline Computation ---
+  const metroLayout = useMemo(() => {
+    if (selectedId !== 'metro' || selectedMetroIds.length === 0) return { events: [], lines: [], width: 0, height: 0 };
+
+    // 1. Filter and sort events that involve at least one selected entity
+    const relevantEvents = [];
+
+    // We need to efficiently check if an event involves any selected entity.
+    // Pre-calculate lowercased names of selected entities.
+    const selectedEntitiesLower = selectedMetroIds.map(id => {
+      const e = entitiesMap.get(id);
+      return e ? e.name.split(' (')[0].trim().toLowerCase() : '';
+    }).filter(Boolean);
+
+    timelineEventsProcessed.forEach(event => {
+      // Fast check: does this event involve any of the selected entity names?
+      const involvesAny = selectedEntitiesLower.some(selectedName => {
+        // Find if the selected name matches or is a substring of any involved name in the event
+        return event.involvedNamesLower.some(involvedName =>
+          involvedName.includes(selectedName) || selectedName.includes(involvedName)
+        );
+      });
+
+      if (involvesAny) {
+        // For each relevant event, figure out specifically WHICH selected IDs are involved
+        const involvedIds = [];
+        selectedMetroIds.forEach(id => {
+           const e = entitiesMap.get(id);
+           if (!e) return;
+           const selectedName = e.name.split(' (')[0].trim().toLowerCase();
+           const isInvolved = event.involvedNamesLower.some(involvedName =>
+            involvedName.includes(selectedName) || selectedName.includes(involvedName)
+          );
+          if (isInvolved) {
+            involvedIds.push(id);
+          }
+        });
+
+        relevantEvents.push({
+          ...event,
+          involvedMetroIds: involvedIds
+        });
+      }
+    });
+
+    // 2. Constants for layout
+    const laneSpacing = 60;
+    const eventSpacingX = 250;
+    const startXOffset = 100;
+    const topMargin = 50;
+
+    // Total dimensions
+    const width = startXOffset + (relevantEvents.length * eventSpacingX) + 200; // Extra space at end
+    const height = topMargin + (selectedMetroIds.length * laneSpacing) + 50;
+
+    // 3. Assign base Y coordinates (lanes) to each selected entity
+    const laneMap = new Map();
+    selectedMetroIds.forEach((id, index) => {
+      laneMap.set(id, topMargin + (index * laneSpacing));
+    });
+
+    // 4. Calculate Event Node coordinates
+    const layoutEvents = relevantEvents.map((event, index) => {
+      const x = startXOffset + (index * eventSpacingX);
+
+      // Calculate Y coordinate based on involved entities
+      let y = 0;
+      if (event.involvedMetroIds.length > 0) {
+        const sumY = event.involvedMetroIds.reduce((sum, id) => sum + laneMap.get(id), 0);
+        y = sumY / event.involvedMetroIds.length;
+      } else {
+        y = topMargin; // Fallback
+      }
+
+      return {
+        ...event,
+        x,
+        y
+      };
+    });
+
+    // 5. Generate Paths for each selected entity
+    const colors = [
+      '#f43f5e', // rose
+      '#14b8a6', // teal
+      '#f59e0b', // amber
+      '#818cf8', // indigo
+      '#10b981', // emerald
+      '#a855f7', // purple
+      '#ec4899', // pink
+      '#3b82f6', // blue
+    ];
+
+    const lines = selectedMetroIds.map((id, index) => {
+      const color = colors[index % colors.length];
+      const baseY = laneMap.get(id);
+      let pathData = '';
+
+      if (layoutEvents.length === 0) {
+        // Draw a straight line if no events
+        pathData = `M 0 ${baseY} L ${width} ${baseY}`;
+        return { id, color, pathData };
+      }
+
+      let currentX = 0;
+      let currentY = baseY;
+
+      pathData = `M ${currentX} ${currentY}`;
+
+      layoutEvents.forEach((event) => {
+        const isInvolved = event.involvedMetroIds.includes(id);
+        const targetX = event.x;
+        const targetY = isInvolved ? event.y : baseY;
+
+        // Curve control points
+        const controlOffset = 80;
+
+        pathData += ` C ${currentX + controlOffset} ${currentY}, ${targetX - controlOffset} ${targetY}, ${targetX} ${targetY}`;
+
+        currentX = targetX;
+        currentY = targetY;
+      });
+
+      // Finish line offscreen
+      pathData += ` C ${currentX + 80} ${currentY}, ${width - 80} ${baseY}, ${width} ${baseY}`;
+
+      return { id, color, pathData };
+    });
+
+    return { events: layoutEvents, lines, width, height, laneMap, colors };
+
+  }, [selectedId, selectedMetroIds, timelineEventsProcessed, entitiesMap]);
 
   // Handle computing embeddings for the network graph
   const handleComputeNetworkEmbeddings = async () => {
@@ -1286,6 +1423,14 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               <span className="truncate text-xs font-bold uppercase tracking-wider">Master Timeline View</span>
             </button>
             <button
+              onClick={() => setSelectedId('metro')}
+              aria-current={selectedId === 'metro' ? "true" : undefined}
+              className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${selectedId === 'metro' ? 'bg-amber-900/20 text-amber-400 shadow-inner border-amber-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
+            >
+              <span className="opacity-80"><Route size={14} /></span>
+              <span className="truncate text-xs font-bold uppercase tracking-wider">Metro Timeline View</span>
+            </button>
+            <button
               onClick={() => setSelectedId('network')}
               aria-current={selectedId === 'network' ? "true" : undefined}
               className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${selectedId === 'network' ? 'bg-rose-900/20 text-rose-400 shadow-inner border-rose-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
@@ -1403,6 +1548,133 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   ctx.fillText(label, node.x, node.y + (8 / globalScale) + fontSize);
                 }}
               />
+            </div>
+          </div>
+        ) : selectedId === 'metro' ? (
+          <div className="relative z-10 flex flex-col h-full overflow-hidden">
+            <div className="p-5 border-b border-slate-800/60 flex items-center justify-between bg-gradient-to-b from-[#0f1115] to-transparent">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-black/40 border border-amber-900/50 rounded-lg shadow-inner">
+                  <Route size={24} className="text-amber-500" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-light tracking-wide text-amber-100">Metro Timeline</h1>
+                  <p className="text-[10px] text-amber-500/70 uppercase tracking-widest mt-1 font-mono">Entity Intersection Visualization</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={metroAddTargetId}
+                  onChange={(e) => setMetroAddTargetId(e.target.value)}
+                  className="bg-[#0a0a0c] border border-amber-900/50 rounded p-1.5 text-xs text-slate-300 outline-none focus:border-amber-500 font-mono focus-visible:ring-2 focus-visible:ring-amber-400"
+                >
+                  <option value="">Select entity to add...</option>
+                  {entities.filter(e => e.type !== 'event' && e.type !== 'memory' && !selectedMetroIds.includes(e.id)).map(e => (
+                    <option key={e.id} value={e.id}>{e.name} ({e.type})</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => {
+                    if (metroAddTargetId && !selectedMetroIds.includes(metroAddTargetId)) {
+                      setSelectedMetroIds([...selectedMetroIds, metroAddTargetId]);
+                      setMetroAddTargetId('');
+                    }
+                  }}
+                  disabled={!metroAddTargetId}
+                  className="px-3 py-1.5 bg-amber-900/40 hover:bg-amber-800/60 disabled:opacity-50 border border-amber-700 text-amber-300 text-[10px] uppercase tracking-widest rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-1"
+                >
+                  <Plus size={12} /> Add Line
+                </button>
+              </div>
+            </div>
+
+            {selectedMetroIds.length > 0 && (
+              <div className="px-5 py-2 border-b border-slate-800/60 bg-black/20 flex flex-wrap gap-2">
+                {selectedMetroIds.map(id => {
+                  const entity = entitiesMap.get(id);
+                  if (!entity) return null;
+                  return (
+                    <div key={id} className="flex items-center gap-1.5 px-2 py-1 bg-[#15181e] border border-slate-700 rounded text-xs text-slate-300 font-mono">
+                      <span>{entity.name}</span>
+                      <button
+                        onClick={() => setSelectedMetroIds(selectedMetroIds.filter(mid => mid !== id))}
+                        className="text-slate-500 hover:text-rose-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 rounded"
+                        title={`Remove ${entity.name}`}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="flex-1 w-full h-full bg-[#0a0a0c] overflow-auto relative p-8">
+              {selectedMetroIds.length === 0 ? (
+                <div className="text-center text-slate-600 font-mono mt-20">Select an entity from the dropdown to start drawing the metro map.</div>
+              ) : metroLayout.events.length === 0 ? (
+                <div className="text-center text-slate-600 font-mono mt-20">No events found involving the selected entities.</div>
+              ) : (
+                <div style={{ width: metroLayout.width, height: metroLayout.height, position: 'relative' }}>
+                  <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0, zIndex: 0 }}>
+                    {metroLayout.lines.map((line) => (
+                      <path
+                        key={line.id}
+                        d={line.pathData}
+                        fill="none"
+                        stroke={line.color}
+                        strokeWidth="4"
+                        strokeOpacity="0.8"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
+                    ))}
+                    {metroLayout.events.map((event) => (
+                      <circle
+                        key={`node-${event.id}`}
+                        cx={event.x}
+                        cy={event.y}
+                        r="6"
+                        fill="#0a0a0c"
+                        stroke="#fff"
+                        strokeWidth="2"
+                        className="cursor-pointer transition-transform hover:scale-150"
+                        onClick={() => setSelectedId(event.id)}
+                      >
+                        <title>{event.name}</title>
+                      </circle>
+                    ))}
+                  </svg>
+
+                  {metroLayout.events.map((event) => (
+                    <div
+                      key={`card-${event.id}`}
+                      className="absolute bg-[#15181e] border border-slate-700 rounded p-2 text-xs shadow-lg cursor-pointer hover:border-amber-500/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                      style={{
+                        left: event.x - 75, // Center the 150px wide card
+                        top: event.y + 15,
+                        width: '150px',
+                        zIndex: 10
+                      }}
+                      onClick={() => setSelectedId(event.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedId(event.id);
+                        }
+                      }}
+                    >
+                      <div className="font-bold text-slate-300 truncate mb-1" title={event.name}>{event.name}</div>
+                      <div className="text-[9px] text-slate-500 font-mono flex items-center justify-between">
+                        <span>#{event.sequence_number}</span>
+                        <span>{event.timestamp}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : selectedId === 'timeline' ? (
