@@ -466,19 +466,20 @@ export default function App() {
     if (entityIds.length === 0) return cache;
 
     for (let i = 0; i < entityIds.length; i++) {
-      for (let j = i + 1; j < entityIds.length; j++) {
-        const e1 = entityIds[i];
-        const e2 = entityIds[j];
-        const vec1 = networkEmbeddings[e1];
-        const vec2 = networkEmbeddings[e2];
+      const e1 = entityIds[i];
+      const vec1 = networkEmbeddings[e1];
+      if (!vec1) continue;
 
-        if (vec1 && vec2) {
-          const similarity = calculateCosineSimilarity(vec1, vec2);
-          if (similarity > 0.75) {
-            const weight = (similarity - 0.75) * 8;
-            const key = e1 < e2 ? `${e1}|${e2}` : `${e2}|${e1}`;
-            cache.set(key, { e1, e2, weight });
-          }
+      for (let j = i + 1; j < entityIds.length; j++) {
+        const e2 = entityIds[j];
+        const vec2 = networkEmbeddings[e2];
+        if (!vec2) continue;
+
+        const similarity = calculateCosineSimilarity(vec1, vec2);
+        if (similarity > 0.75) {
+          const weight = (similarity - 0.75) * 8;
+          const key = e1 < e2 ? `${e1}|${e2}` : `${e2}|${e1}`;
+          cache.set(key, { e1, e2, weight });
         }
       }
     }
