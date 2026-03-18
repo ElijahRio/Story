@@ -654,7 +654,7 @@ export default function App() {
   };
 
   const createNewEntity = (type) => {
-    const newId = `e-${Date.now()}`;
+    const newId = `e-${crypto.randomUUID()}`;
     const baseEntity = { id: newId, type: type, name: `New ${type}`, description: '', systemic_inputs: '', systemic_outputs: '' };
 
     let newEntity = { ...baseEntity };
@@ -940,7 +940,7 @@ You MUST output strictly a JSON object following this exact schema. Do NOT outpu
 
       const parsed = JSON.parse(rawText) || {};
 
-      const newId = `e-mem-${Date.now()}`;
+      const newId = `e-mem-${crypto.randomUUID()}`;
 
       const newMemory = {
         id: newId,
@@ -1149,7 +1149,7 @@ Each object in the "audits" array must follow this schema:
 
       if (Array.isArray(extractedAudits)) {
         const sanitizedAudits = extractedAudits.map(audit => ({
-          id: safeString(audit.id) || `audit-${Math.floor(Math.random() * 100000)}`,
+          id: safeString(audit.id) || `audit-${crypto.randomUUID()}`,
           severity: safeString(audit.severity) || 'NOTE',
           target: safeString(audit.target) || 'UNKNOWN',
           issue: safeString(audit.issue) || 'Unknown issue detected.'
