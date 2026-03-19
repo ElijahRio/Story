@@ -868,30 +868,34 @@ export default function App() {
     const mergedTarget = { ...targetEntity };
 
     // Define valid fields per entity type to handle cross-type merging
-    const baseFields = ['id', 'type', 'name', 'description', 'systemic_inputs', 'systemic_outputs'];
+    const baseFieldsArray = ['id', 'type', 'name', 'description', 'systemic_inputs', 'systemic_outputs'];
     const validFieldsByType = {
-      'asset': [...baseFields, 'birth_date', 'death_date', 'biological_alterations', 'compliance_metric', 'degradation_status', 'ai_analysis'],
-      'personnel': [...baseFields, 'birth_date', 'death_date', 'attributes', 'ulterior_motives', 'liabilities', 'ai_analysis'],
-      'technology': [...baseFields, 'biological_cost', 'deployment_status'],
-      'anomaly': [...baseFields, 'manifestation', 'environmental_impact'],
-      'event': [...baseFields, 'sequence_number', 'timestamp', 'involved_records', 'systemic_impact'],
-      'memory': [...baseFields, 'timestamp', 'unresolved_threads']
+      'asset': new Set([...baseFieldsArray, 'birth_date', 'death_date', 'biological_alterations', 'compliance_metric', 'degradation_status', 'ai_analysis']),
+      'personnel': new Set([...baseFieldsArray, 'birth_date', 'death_date', 'attributes', 'ulterior_motives', 'liabilities', 'ai_analysis']),
+      'technology': new Set([...baseFieldsArray, 'biological_cost', 'deployment_status']),
+      'anomaly': new Set([...baseFieldsArray, 'manifestation', 'environmental_impact']),
+      'event': new Set([...baseFieldsArray, 'sequence_number', 'timestamp', 'involved_records', 'systemic_impact']),
+      'memory': new Set([...baseFieldsArray, 'timestamp', 'unresolved_threads'])
     };
+
+    const baseFields = new Set(baseFieldsArray);
 
     const targetType = targetEntity.type;
     const validTargetFields = validFieldsByType[targetType] || baseFields;
 
     const unmappedDetails = [];
 
+    const coreIdentityFields = new Set(['id', 'type', 'name']);
+
     // Process all fields from the source entity
     Object.keys(sourceEntity).forEach(field => {
       // Skip core identity fields
-      if (['id', 'type', 'name'].includes(field)) return;
+      if (coreIdentityFields.has(field)) return;
 
       const sourceValue = safeString(sourceEntity[field]).trim();
       if (!sourceValue) return;
 
-      if (validTargetFields.includes(field)) {
+      if (validTargetFields.has(field)) {
         // If it's a valid field for the target, merge normally
         mergedTarget[field] = combineText(targetEntity[field], sourceEntity[field]);
       } else {
