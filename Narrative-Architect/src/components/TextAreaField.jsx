@@ -19,7 +19,7 @@ const TextAreaField = ({ label, colorClass, detectedLinks, onNavigate, ...textar
             <button
               key={link.id}
               onClick={() => onNavigate(link.id)}
-              className="text-[9px] uppercase tracking-widest px-2 py-1 bg-teal-950/20 hover:bg-teal-900/40 text-teal-500 hover:text-teal-400 border border-teal-900/50 hover:border-teal-700 rounded flex items-center gap-1 font-mono transition-colors shadow-sm"
+              className="text-[9px] uppercase tracking-widest px-2 py-1 bg-teal-950/20 hover:bg-teal-900/40 text-teal-500 hover:text-teal-400 border border-teal-900/50 hover:border-teal-700 rounded flex items-center gap-1 font-mono transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
               title={`Maps to ${link.name}`}
             >
               <CornerDownRight size={10} /> {link.name}

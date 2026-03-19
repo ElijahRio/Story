@@ -19,3 +19,7 @@
 ## 2024-03-16 - Accessible Custom Interactive Elements
 **Learning:** When using generic block elements like `<div>` or `<span>` as clickable cards or tags (like in the Timeline view), they completely drop out of keyboard navigation. Adding `onClick` is insufficient for accessibility.
 **Action:** Always convert inline interactive tags (like `<span>`) to `<button type="button">`. For complex, block-level interactive cards (like a `<div>` acting as a button), add `role="button"`, `tabIndex={0}`, an explicit `onKeyDown` handler for 'Enter' and 'Space' keys, and ensure Tailwind `focus-visible` ring utilities are applied for visual feedback during keyboard navigation.
+
+## 2024-11-20 - Focus Rings on Dynamic Tags
+**Learning:** Dynamically generated clickable UI elements, such as the Conveyor Belt tags in `TextAreaField`, often get missed during accessibility checks for keyboard navigation because they rely on auto-generated `button` elements that lack standard form field focus styles.
+**Action:** When implementing dynamically rendered inline links or tags, always verify they include `focus:outline-none focus-visible:ring-2` with an appropriate ring color to ensure keyboard navigability.
