@@ -417,7 +417,9 @@ export default function App() {
       let foundEntity = exactMatchMap.get(lowerName);
 
       // Slow path: O(N) partial match fallback
-      if (!foundEntity) {
+      // ⚡ Bolt: Only perform expensive O(N) partial matches if the fragment is reasonably long (>3 chars)
+      // This prevents massive CPU bottlenecks when users type short strings like "the", "a", or "an"
+      if (!foundEntity && lowerName.length > 3) {
         foundEntity = entityLinkDictionary.find(e => {
           return e.nameLower.includes(lowerName) || lowerName.includes(e.nameLower);
         });
