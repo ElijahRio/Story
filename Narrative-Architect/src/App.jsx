@@ -347,10 +347,10 @@ export default function App() {
   const entityLinkDictionary = useMemo(() => {
     const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+    // ⚡ Bolt: Use existing O(1) Map instead of O(N) Array allocation + O(N) Set insertion
     // Clean up cache entries for deleted entities
-    const currentEntityIds = new Set(entities.map(e => e.id));
     for (const id of regexCacheRef.current.keys()) {
-      if (!currentEntityIds.has(id)) {
+      if (!entitiesMap.has(id)) {
         regexCacheRef.current.delete(id);
       }
     }
@@ -391,7 +391,7 @@ export default function App() {
 
       return dictEntry;
     });
-  }, [entities]);
+  }, [entities, entitiesMap]);
 
   // ⚡ Bolt: Memoize the loose string matching resolution for timeline entities to avoid O(N*M) lookups on every render
   const timelineEntityMatchCache = useMemo(() => {
