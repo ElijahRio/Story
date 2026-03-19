@@ -1565,7 +1565,9 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <label htmlFor="metro-entity-select" className="sr-only">Select entity to add</label>
                 <select
+                  id="metro-entity-select"
                   value={metroAddTargetId}
                   onChange={(e) => setMetroAddTargetId(e.target.value)}
                   className="bg-[#0a0a0c] border border-amber-900/50 rounded p-1.5 text-xs text-slate-300 outline-none focus:border-amber-500 font-mono focus-visible:ring-2 focus-visible:ring-amber-400"
@@ -1583,6 +1585,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                     }
                   }}
                   disabled={!metroAddTargetId}
+                  title={!metroAddTargetId ? 'Select an entity first' : 'Add line to timeline'}
                   className="px-3 py-1.5 bg-amber-900/40 hover:bg-amber-800/60 disabled:opacity-50 border border-amber-700 text-amber-300 text-[10px] uppercase tracking-widest rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-1"
                 >
                   <Plus size={12} /> Add Line
@@ -1602,6 +1605,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                         onClick={() => setSelectedMetroIds(selectedMetroIds.filter(mid => mid !== id))}
                         className="text-slate-500 hover:text-rose-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 rounded"
                         title={`Remove ${entity.name}`}
+                        aria-label={`Remove ${entity.name}`}
                       >
                         <X size={12} />
                       </button>
