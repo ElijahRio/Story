@@ -337,6 +337,15 @@ export default function App() {
     });
   }, [timelineEvents]);
 
+  // ⚡ Bolt: Memoize the list of entities available for the Metro Timeline dropdown
+  // to prevent O(N) array filtering and concatenation on every render.
+  const metroAddableEntities = useMemo(() => [
+    ...(entitiesByType['asset'] || []),
+    ...(entitiesByType['personnel'] || []),
+    ...(entitiesByType['technology'] || []),
+    ...(entitiesByType['anomaly'] || [])
+  ], [entitiesByType]);
+
   // Pre-compile RegExp matchers to optimize the Advanced Link Detection Engine.
   // RegExp compilation inside the render loop was identified as a major performance bottleneck.
   // ⚡ Bolt: Use a ref Map to cache compiled matchers per entity.
@@ -1577,7 +1586,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   className="bg-[#0a0a0c] border border-amber-900/50 rounded p-1.5 text-xs text-slate-300 outline-none focus:border-amber-500 font-mono focus-visible:ring-2 focus-visible:ring-amber-400"
                 >
                   <option value="">Select entity to add...</option>
-                  {entities.filter(e => e.type !== 'event' && e.type !== 'memory' && !selectedMetroIds.includes(e.id)).map(e => (
+                  {metroAddableEntities.filter(e => !selectedMetroIds.includes(e.id)).map(e => (
                     <option key={e.id} value={e.id}>{e.name} ({e.type})</option>
                   ))}
                 </select>
