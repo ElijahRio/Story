@@ -910,7 +910,7 @@ export default function App() {
       } else {
         // If it's not valid for the target type, push to unmapped details
         // Format the field name nicely (e.g., biological_alterations -> Biological Alterations)
-        const formattedField = field.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        const formattedField = field.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
         unmappedDetails.push(`${formattedField}:\n${sourceValue}`);
       }
     });
