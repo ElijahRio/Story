@@ -557,10 +557,8 @@ export default function App() {
     };
 
     // 1. Text-based references
-    let currentNamesHash = '';
-    for (let i = 0; i < entities.length; i++) {
-      currentNamesHash += entities[i].name + '|';
-    }
+    // ⚡ Bolt: Replaced string concatenation in loop with a one-liner `.map().join()`
+    const currentNamesHash = entities.map(e => e.name).join('|') + '|';
 
     const cacheData = textLinksCacheRef.current;
     if (cacheData.namesHash !== currentNamesHash) {
