@@ -976,12 +976,29 @@ export default function App() {
     reader.onload = (event) => {
       try {
         const importedData = JSON.parse(event.target.result);
-        if (Array.isArray(importedData)) {
-          setEntities(importedData.map(sanitizeEntity));
-          setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: External biological data feed imported successfully.' }]);
+        if (!Array.isArray(importedData)) {
+          throw new Error("Import data must be an array of entities.");
         }
+
+        const validEntities = importedData.filter(ent =>
+          ent !== null &&
+          typeof ent === 'object' &&
+          typeof ent.id === 'string' &&
+          typeof ent.type === 'string'
+        );
+
+        if (validEntities.length === 0 && importedData.length > 0) {
+           throw new Error("No valid entities found in import data. Required fields: 'id' (string), 'type' (string).");
+        }
+
+        setEntities(validEntities.map(sanitizeEntity));
+
+        const successMsg = `[SYSTEM]: External biological data feed imported successfully. ${validEntities.length} entities loaded.` +
+                           (validEntities.length < importedData.length ? ` (${importedData.length - validEntities.length} invalid entities skipped).` : '');
+        setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: successMsg }]);
       } catch (err) {
-        console.error("Failed to parse backup:", err);
+        console.error("Failed to parse or validate backup:", err);
+        setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[ERROR]: Import failed. ${err.message}` }]);
       }
     };
     reader.readAsText(file);
