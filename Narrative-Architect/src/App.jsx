@@ -290,6 +290,11 @@ export default function App() {
   const [selectedMetroIds, setSelectedMetroIds] = useState([]);
   const [metroAddTargetId, setMetroAddTargetId] = useState('');
 
+  // Metro Timeline Drag Scrolling State
+  const metroScrollRef = useRef(null);
+  const [isMetroDragging, setIsMetroDragging] = useState(false);
+  const [metroDragStart, setMetroDragStart] = useState({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
+
   // --- Derived State ---
   // ⚡ Bolt: Use a single O(N) pass to build both an O(1) ID Map and a type index.
   // This avoids multiple redundant array traversals for `entitiesMap`, `filteredEntities`, and `timelineEvents`.
@@ -1653,13 +1658,38 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               </div>
             )}
 
-            <div className="flex-1 w-full h-full bg-[#0a0a0c] overflow-auto relative p-8">
+            <div
+              ref={metroScrollRef}
+              className={`flex-1 w-full h-full bg-[#0a0a0c] overflow-auto relative p-8 ${isMetroDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+              style={{ minHeight: 0 }}
+              onMouseDown={(e) => {
+                setIsMetroDragging(true);
+                setMetroDragStart({
+                  x: e.pageX - metroScrollRef.current.offsetLeft,
+                  y: e.pageY - metroScrollRef.current.offsetTop,
+                  scrollLeft: metroScrollRef.current.scrollLeft,
+                  scrollTop: metroScrollRef.current.scrollTop
+                });
+              }}
+              onMouseLeave={() => setIsMetroDragging(false)}
+              onMouseUp={() => setIsMetroDragging(false)}
+              onMouseMove={(e) => {
+                if (!isMetroDragging) return;
+                e.preventDefault();
+                const x = e.pageX - metroScrollRef.current.offsetLeft;
+                const y = e.pageY - metroScrollRef.current.offsetTop;
+                const walkX = (x - metroDragStart.x) * 1.5;
+                const walkY = (y - metroDragStart.y) * 1.5;
+                metroScrollRef.current.scrollLeft = metroDragStart.scrollLeft - walkX;
+                metroScrollRef.current.scrollTop = metroDragStart.scrollTop - walkY;
+              }}
+            >
               {selectedMetroIds.length === 0 ? (
                 <div className="text-center text-slate-600 font-mono mt-20">Select an entity from the dropdown to start drawing the metro map.</div>
               ) : metroLayout.events.length === 0 ? (
                 <div className="text-center text-slate-600 font-mono mt-20">No events found involving the selected entities.</div>
               ) : (
-                <div style={{ width: metroLayout.width, height: metroLayout.height, position: 'relative' }}>
+                <div style={{ width: metroLayout.width, height: metroLayout.height, minWidth: metroLayout.width, minHeight: metroLayout.height, position: 'relative' }}>
                   <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0, zIndex: 0 }}>
                     {metroLayout.lines.map((line) => (
                       <path
