@@ -42,19 +42,20 @@ const AssetPersonnelFields = ({ selectedEntity, renderField, handleUpdateEntity,
     {/* AI Profile Audit Section */}
     <div className="col-span-2 mt-4 pt-4 border-t border-slate-800/60">
       <div className="flex justify-between items-center mb-3">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-teal-500 flex items-center gap-1.5">
+        <label htmlFor="behavioral-audit-textarea" className="text-[10px] font-bold uppercase tracking-widest text-teal-500 flex items-center gap-1.5">
           <Fingerprint size={12} /> Behavioral Profile Audit
         </label>
         <button
           onClick={() => handleProfileAudit(selectedEntity)}
           disabled={isAuditingProfile}
-          className="px-3 py-1.5 bg-teal-950/30 hover:bg-teal-900/50 border border-teal-900/50 rounded text-[9px] uppercase tracking-widest text-teal-400 hover:text-teal-300 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+          title={isAuditingProfile ? "Analysis in progress..." : "Run behavioral consistency audit"}
+          className="px-3 py-1.5 bg-teal-950/30 hover:bg-teal-900/50 border border-teal-900/50 rounded text-[9px] uppercase tracking-widest text-teal-400 hover:text-teal-300 disabled:opacity-50 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
         >
           {isAuditingProfile ? <><Activity size={10} className="animate-spin" /> Analyzing Timeline...</> : 'Generate Report'}
         </button>
       </div>
       <textarea
-        aria-label="Behavioral Profile Audit"
+        id="behavioral-audit-textarea"
         value={selectedEntity.ai_analysis || ''}
         onChange={(e) => handleUpdateEntity('ai_analysis', e.target.value)}
         className="w-full h-64 bg-teal-950/10 border border-teal-900/30 rounded p-4 text-xs text-slate-300 focus:outline-none focus:border-teal-700 resize-none font-mono leading-relaxed shadow-inner"
