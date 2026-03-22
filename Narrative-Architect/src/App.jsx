@@ -238,6 +238,8 @@ export default function App() {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   // Overseer Logic State
@@ -1089,7 +1091,8 @@ export default function App() {
 
   // --- Handlers: LLM Core Dump (Memory Archival) ---
   const handleArchiveMemory = async () => {
-    if (isTyping) return;
+    if (isTyping || isArchiving) return;
+    setIsArchiving(true);
     setIsTyping(true);
     setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: Executing Core Memory Dump. Archiving facility state...' }]);
 
@@ -1149,6 +1152,7 @@ You MUST output strictly a JSON object following this exact schema. Do NOT outpu
       console.error(error);
       setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: `[SYSTEM ERROR]: Core Dump Failure - ${error.message}. Ensure model outputs valid JSON.` }]);
     } finally {
+      setIsArchiving(false);
       setIsTyping(false);
     }
   };
@@ -1230,7 +1234,8 @@ Each object in the "entities" array must strictly follow this schema:
   };
 
   const handleParadoxScan = async () => {
-    if (isTyping) return;
+    if (isTyping || isScanning) return;
+    setIsScanning(true);
     const userMsg = { id: crypto.randomUUID(), role: 'user', content: 'Initiate a paradox scan. Check the entire registry for any logical anomalies, contradictions, unaddressed biological/mechanical conflicts, SUPPLY CHAIN FAILURES, or CHRONOLOGICAL DISCREPANCIES (e.g. actions occurring before a birth_date or after a death_date) across all recorded entities and events.' };
     setChatHistory(prev => [...prev, userMsg]);
     setIsTyping(true);
@@ -1261,6 +1266,7 @@ Each object in the "entities" array must strictly follow this schema:
       console.error(error);
       setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: `[SYSTEM REJECTION]: ${error.message}` }]);
     } finally {
+      setIsScanning(false);
       setIsTyping(false);
     }
   };
@@ -2033,18 +2039,18 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 <button
                   onClick={handleArchiveMemory}
                   disabled={isTyping}
-                  className="px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 hover:border-emerald-700/50 rounded text-[9px] text-emerald-500 hover:text-emerald-400 disabled:opacity-50 uppercase tracking-widest transition-colors"
+                  className="px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 hover:border-emerald-700/50 rounded text-[9px] text-emerald-500 hover:text-emerald-400 disabled:opacity-50 uppercase tracking-widest transition-colors flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                   title="Force AI to summarize and save its current understanding"
                 >
-                  <HardDrive size={10} /> Dump
+                  {isArchiving ? <><Activity size={10} className="animate-spin" /> Dumping...</> : <><HardDrive size={10} /> Dump</>}
                 </button>
                 <button
                   onClick={handleParadoxScan}
                   disabled={isTyping}
-                  className="px-2 py-1 bg-teal-900/20 hover:bg-rose-900/30 border border-teal-800/50 hover:border-rose-700/50 rounded text-[9px] text-teal-500 hover:text-rose-400 disabled:opacity-50 uppercase tracking-widest transition-colors"
+                  className="px-2 py-1 bg-teal-900/20 hover:bg-rose-900/30 border border-teal-800/50 hover:border-rose-700/50 rounded text-[9px] text-teal-500 hover:text-rose-400 disabled:opacity-50 uppercase tracking-widest transition-colors flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                   title="Scan entire database for contradictions"
                 >
-                  <Activity size={10} /> Scan
+                  {isScanning ? <><Activity size={10} className="animate-spin" /> Scanning...</> : <><Activity size={10} /> Scan</>}
                 </button>
               </div>
             </div>
