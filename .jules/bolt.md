@@ -4,3 +4,6 @@
 ## 2024-05-24 - [Replace .map().join() with For Loop]
 **Learning:** In V8 environments (Node.js/Chrome), traditional 'for' loops using '+=' for string concatenation are highly optimized via cons-strings. Using array methods like '.map().join()' for simple concatenations allocates intermediate arrays, increasing garbage collection overhead and execution time (often 3-5x slower).
 **Action:** For performance-critical loops running on every render (like calculating global hash states), always prefer primitive 'for' loops and '+=' string concatenation over creating arrays just to '.join()' them.
+## 2024-05-25 - [Use .includes() as Fast-Path Pre-Filter for RegExp]
+**Learning:** In 'Narrative-Architect', when evaluating text against a large dictionary of regular expressions (like in `getDetectedLinks`), running `.test()` for every entity causes O(N * M) bottlenecks, leading to massive UI lag during typing.
+**Action:** Use primitive string `.includes()` checks as a fast-path pre-filter before executing `.test()`. Skipping expensive RegExp evaluations for entities whose names don't appear as substrings drastically improves performance.
