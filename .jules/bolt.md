@@ -4,3 +4,6 @@
 ## 2024-05-24 - [Replace .map().join() with For Loop]
 **Learning:** In V8 environments (Node.js/Chrome), traditional 'for' loops using '+=' for string concatenation are highly optimized via cons-strings. Using array methods like '.map().join()' for simple concatenations allocates intermediate arrays, increasing garbage collection overhead and execution time (often 3-5x slower).
 **Action:** For performance-critical loops running on every render (like calculating global hash states), always prefer primitive 'for' loops and '+=' string concatenation over creating arrays just to '.join()' them.
+## 2026-03-23 - [Avoid O(N * M) RegExp Evaluations in getDetectedLinks]
+**Learning:** Evaluating regular expressions (`e.matchFullName.test()`) against a long string for thousands of entities inside the `getDetectedLinks` filter causes significant CPU blocking and typing lag (O(N * M) complexity). Primitive string checks (`.includes()`) are vastly faster than `RegExp.test()`.
+**Action:** Always add a fast-path string `.includes()` check using a pre-computed lowercase base name (or stripped name) to rapidly filter out non-matching entities before falling back to the expensive regular expression evaluation.

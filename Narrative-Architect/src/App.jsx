@@ -388,6 +388,8 @@ export default function App() {
 
       const compiledData = {
         nameLower: fullName, // Pre-computed for fast timeline lookups
+        baseNameLower: baseName, // Pre-computed for fast substring checks
+        strippedNameLower: strippedName.length > 2 ? strippedName : null, // Pre-computed for fast substring checks
         matchFullName: new RegExp(`\\b${escapeRegExp(fullName)}\\b`, 'i'),
         matchBaseName: baseName.length > 2 ? new RegExp(`\\b${escapeRegExp(baseName)}\\b`, 'i') : null,
         matchStrippedName: strippedName.length > 2 ? new RegExp(`\\b${escapeRegExp(strippedName)}\\b`, 'i') : null,
@@ -491,8 +493,16 @@ export default function App() {
     const lowerText = safeText.toLowerCase();
 
     // ⚡ Bolt: Use the memoized entity dictionary to skip RegExp instantiation during rendering.
+    // Also use primitive string `.includes()` checks as a fast path to skip expensive RegExp
+    // evaluations for entities whose names don't even appear as substrings.
     const result = entityLinkDictionary.filter(e => {
       if (e.id === currentId) return false;
+
+      // Fast path string check: skip expensive regex if the name doesn't even exist in the text
+      if (!lowerText.includes(e.baseNameLower) &&
+          (!e.strippedNameLower || !lowerText.includes(e.strippedNameLower))) {
+        return false;
+      }
 
       return e.matchFullName.test(lowerText) ||
              (e.matchBaseName && e.matchBaseName.test(lowerText)) ||
