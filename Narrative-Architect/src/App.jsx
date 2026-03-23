@@ -386,8 +386,12 @@ export default function App() {
       const baseName = fullName.split(' (')[0].trim();
       const strippedName = baseName.replace(/^(the|a|an)\s+/, '');
 
+      // ⚡ Bolt: Added searchFragment as the shortest string for fast O(1) string pre-filtering
+      const searchFragment = strippedName.length > 2 ? strippedName : (baseName.length > 2 ? baseName : fullName);
+
       const compiledData = {
         nameLower: fullName, // Pre-computed for fast timeline lookups
+        searchFragment,      // Fast path pre-filter for getDetectedLinks
         matchFullName: new RegExp(`\\b${escapeRegExp(fullName)}\\b`, 'i'),
         matchBaseName: baseName.length > 2 ? new RegExp(`\\b${escapeRegExp(baseName)}\\b`, 'i') : null,
         matchStrippedName: strippedName.length > 2 ? new RegExp(`\\b${escapeRegExp(strippedName)}\\b`, 'i') : null,
@@ -490,9 +494,12 @@ export default function App() {
 
     const lowerText = safeText.toLowerCase();
 
-    // ⚡ Bolt: Use the memoized entity dictionary to skip RegExp instantiation during rendering.
+    // ⚡ Bolt: Use primitive string .includes() as a fast-path pre-filter before expensive RegExp tests.
     const result = entityLinkDictionary.filter(e => {
       if (e.id === currentId) return false;
+
+      // Skip expensive RegExp testing if the core string isn't even present
+      if (!lowerText.includes(e.searchFragment)) return false;
 
       return e.matchFullName.test(lowerText) ||
              (e.matchBaseName && e.matchBaseName.test(lowerText)) ||
