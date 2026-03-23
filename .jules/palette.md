@@ -23,3 +23,7 @@
 ## 2024-11-20 - Focus Rings on Dynamic Tags
 **Learning:** Dynamically generated clickable UI elements, such as the Conveyor Belt tags in `TextAreaField`, often get missed during accessibility checks for keyboard navigation because they rely on auto-generated `button` elements that lack standard form field focus styles.
 **Action:** When implementing dynamically rendered inline links or tags, always verify they include `focus:outline-none focus-visible:ring-2` with an appropriate ring color to ensure keyboard navigability.
+
+## 2024-05-24 - Inline form fields missing standard accessibility wrappers
+**Learning:** Manually rendered inline form fields within specialized components (like `DynamicEntityFields.jsx`) often lack the explicit `<label htmlFor="...">` and `<input/textarea id="...">` mapping and missing interactive states like disabled explanations or focus rings that are built into shared base UI components like `InputField` and `TextAreaField`. When adding custom one-off form fields, developers tend to fall back on `aria-label` which loses the visual click-to-focus benefit of explicit labels.
+**Action:** When auditing forms, do not just check main layout files; actively search for raw `<input>`, `<textarea>`, and `<select>` tags inside specialized nested components to ensure they properly map their IDs to adjacent explicit `<label>` tags and provide keyboard focus states.
