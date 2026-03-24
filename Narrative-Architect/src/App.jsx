@@ -2225,11 +2225,11 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             </div>
 
             <div className="p-6 flex-1 flex flex-col gap-4 overflow-hidden">
-              <p className="text-xs text-slate-400 font-mono">
+              <label htmlFor="raw-transcript-input" className="text-xs text-slate-400 font-mono">
                 Paste raw text from the "Trauma of Compliance" document below. The extraction algorithm will automatically map Assets, Personnel, Tech, Anomalies, and EVENTS.
-              </p>
+              </label>
               <textarea
-                aria-label="Raw Transcript Input"
+                id="raw-transcript-input"
                 value={ingestText}
                 onChange={(e) => setIngestText(e.target.value)}
                 placeholder="Paste raw PDF transcript here..."
@@ -2240,16 +2240,17 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <div className="p-4 border-t border-slate-800/60 bg-black/20 flex justify-end gap-3">
               <button
                 onClick={() => setShowIngest(false)}
-                className="px-4 py-2 border border-slate-700 rounded text-xs uppercase tracking-widest text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="px-4 py-2 border border-slate-700 rounded text-xs uppercase tracking-widest text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
               >
                 Abort
               </button>
               <button
                 onClick={handleIngestRawText}
                 disabled={isIngesting || !ingestText.trim()}
-                className="flex items-center gap-2 px-6 py-2 bg-teal-900/40 hover:bg-teal-800/60 border border-teal-700 rounded text-xs uppercase tracking-widest text-teal-400 hover:text-teal-300 disabled:opacity-50 transition-colors"
+                title={isIngesting ? "Extraction in progress..." : !ingestText.trim() ? "Waiting for text input" : "Initialize text extraction"}
+                className="flex items-center gap-2 px-6 py-2 bg-teal-900/40 hover:bg-teal-800/60 border border-teal-700 rounded text-xs uppercase tracking-widest text-teal-400 hover:text-teal-300 disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
               >
-                {isIngesting ? <><Activity size={14} className="animate-pulse" /> Processing...</> : 'Initialize Extraction'}
+                {isIngesting ? <><Activity size={14} className="animate-spin" /> Processing...</> : 'Initialize Extraction'}
               </button>
             </div>
           </div>
