@@ -72,6 +72,21 @@ function getAge(birthStr, eventStr) {
   return age;
 }
 
+async function fetchOllama(url, payload) {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.error || `HTTP Error ${response.status} at ${url}`);
+  }
+
+  return response;
+}
+
 function extractJsonFromText(rawText) {
   if (!rawText || typeof rawText !== 'string') return "";
 
@@ -789,12 +804,7 @@ export default function App() {
              return `${e.name}. ${safeString(e.description)}. ${safeString(e.systemic_inputs)}. ${safeString(e.systemic_outputs)}`;
           });
 
-          const batchRes = await fetch(embedUrl, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: embedModel, input: inputs })
-          });
-
-          if (!batchRes.ok) throw new Error(`Embedding Engine Error: ${batchRes.status}`);
+          const batchRes = await fetchOllama(embedUrl, { model: embedModel, input: inputs });
 
           const batchData = await batchRes.json();
           toCompute.forEach((e, idx) => {
@@ -1045,19 +1055,12 @@ export default function App() {
         setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: Engaging embedding engine. Vectorizing query for semantic search...' }]);
         const embedUrl = llmUrl.replace('/api/chat', '/api/embed');
 
-        const queryRes = await fetch(embedUrl, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: embedModel, input: userMsg.content })
-        });
-        if (!queryRes.ok) throw new Error(`Embedding Engine Offline. Verify '${embedModel}' is installed via Ollama.`);
+        const queryRes = await fetchOllama(embedUrl, { model: embedModel, input: userMsg.content });
         const queryData = await queryRes.json();
         const queryVector = queryData.embeddings[0];
 
         const entityTexts = entities.map(e => JSON.stringify(e));
-        const batchRes = await fetch(embedUrl, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: embedModel, input: entityTexts })
-        });
+        const batchRes = await fetchOllama(embedUrl, { model: embedModel, input: entityTexts });
         const batchData = await batchRes.json();
 
         const scoredEntities = entities.map((entity, index) => ({
@@ -1079,16 +1082,7 @@ export default function App() {
         stream: false
       };
 
-      const response = await fetch(llmUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `HTTP Error ${response.status}: Registry not found. Check Model Name.`);
-      }
+      const response = await fetchOllama(llmUrl, payload);
 
       const data = await response.json();
       setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
@@ -1135,14 +1129,7 @@ You MUST output strictly a JSON object following this exact schema. Do NOT outpu
     };
 
     try {
-      const response = await fetch(llmUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) throw new Error("Auditor Engine Offline.");
-
+      const response = await fetchOllama(llmUrl, payload);
       const data = await response.json();
       let rawText = data.message?.content || "";
 
@@ -1211,14 +1198,7 @@ Each object in the "entities" array must strictly follow this schema:
     };
 
     try {
-      const response = await fetch(llmUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) throw new Error("Ingestion Engine Offline.");
-
+      const response = await fetchOllama(llmUrl, payload);
       const data = await response.json();
       let rawText = data.message?.content || "";
 
@@ -1273,12 +1253,7 @@ Each object in the "entities" array must strictly follow this schema:
     };
 
     try {
-      const response = await fetch(llmUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) throw new Error(`HTTP Error ${response.status}: Registry not found.`);
+      const response = await fetchOllama(llmUrl, payload);
       const data = await response.json();
       setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', content: data.message?.content || "Error: Corrupted feed." }]);
     } catch (error) {
@@ -1319,14 +1294,7 @@ Each object in the "audits" array must follow this schema:
     };
 
     try {
-      const response = await fetch(llmUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) throw new Error("Auditor Engine Offline.");
-
+      const response = await fetchOllama(llmUrl, payload);
       const data = await response.json();
       let rawText = data.message?.content || "";
 
@@ -1395,14 +1363,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
     };
 
     try {
-      const response = await fetch(llmUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) throw new Error("Auditor Engine Offline.");
-
+      const response = await fetchOllama(llmUrl, payload);
       const data = await response.json();
       const analysisText = data.message?.content || "Analysis failed to generate.";
 
