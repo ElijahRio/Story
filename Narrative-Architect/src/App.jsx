@@ -603,18 +603,21 @@ export default function App() {
     }
 
     entities.forEach(entity => {
-      const allText = [
-        entity.description,
-        entity.systemic_inputs,
-        entity.systemic_outputs,
-        entity.biological_alterations,
-        entity.attributes,
-        entity.liabilities,
-        entity.involved_records,
-        entity.systemic_impact,
-        entity.unresolved_threads,
-        entity.ai_analysis
-      ].filter(Boolean).join(' ');
+      // ⚡ Bolt: Replaced expensive array allocation and .filter(Boolean).join(' ')
+      // with primitive string concatenation to improve performance and reduce GC overhead
+      // during network graph rendering.
+      let allText = '';
+      if (entity.description) allText += entity.description + ' ';
+      if (entity.systemic_inputs) allText += entity.systemic_inputs + ' ';
+      if (entity.systemic_outputs) allText += entity.systemic_outputs + ' ';
+      if (entity.biological_alterations) allText += entity.biological_alterations + ' ';
+      if (entity.attributes) allText += entity.attributes + ' ';
+      if (entity.liabilities) allText += entity.liabilities + ' ';
+      if (entity.involved_records) allText += entity.involved_records + ' ';
+      if (entity.systemic_impact) allText += entity.systemic_impact + ' ';
+      if (entity.unresolved_threads) allText += entity.unresolved_threads + ' ';
+      if (entity.ai_analysis) allText += entity.ai_analysis + ' ';
+      if (allText.length > 0) allText = allText.slice(0, -1);
 
       let cachedEntry = cacheData.cache.get(entity.id);
       if (cachedEntry && cachedEntry.text === allText) {
