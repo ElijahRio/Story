@@ -2106,7 +2106,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   title={isTyping ? "Engine is processing..." : !chatInput.trim() ? "Input required" : "Send query"}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-teal-600/20 hover:bg-teal-600/40 text-teal-500 disabled:text-slate-600 disabled:bg-transparent rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                 >
-                  <Send size={16} />
+                  {isTyping ? <Activity size={16} className="animate-spin" /> : <Send size={16} />}
                 </button>
               </div>
               <p className="text-[9px] text-slate-600 text-center mt-2 font-mono uppercase tracking-widest">Shift+Enter for newline</p>
