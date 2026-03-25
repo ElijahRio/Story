@@ -1,17 +1,7 @@
-1. **Add `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500` to the "Confirm Merge" button in the Merge Dropdown UI.**
-2. **Add `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500` to the target `<select>` element in the Merge Dropdown UI.**
-3. **Run tests (`pnpm test` and `pnpm lint`) and ensure they pass.**
-4. **Create a `pre_commit_instructions` block.**
-5. **Submit.**
-1. **Optimize `getDetectedLinks` caching in `App.jsx`**
-   - The current `detectedLinksCacheRef` caches only one entry per `currentId`.
-   - However, `getDetectedLinks` is called multiple times for the same entity (e.g., for `description`, `systemic_inputs`, `systemic_outputs`, etc.) during render.
-   - This causes cache thrashing where the cache is constantly overwritten and never hits, resulting in O(N) regex evaluations repeatedly.
-   - I will modify `getDetectedLinks` to take a cache key or store multiple texts per `currentId`. The easiest fix is to make the inner cache a Map or Object keyed by the text itself (or a field name if provided), so that multiple texts for the same entity can be cached simultaneously.
-2. **Implementation details**
-   - Modify `detectedLinksCacheRef.current.cache` to store a Map for each `currentId`, which then maps `text` to `result`.
-   - Update `getDetectedLinks` to use this nested map.
-3. **Add a pre-commit step**
-   - Ensure proper testing, verification, review, and reflection are done.
-4. **Submit PR**
-   - Use Bolt formatting for the PR title and description, explaining the fix and the impact.
+1. **Add a visual loading state to the send message button in the AI chat interface.**
+   - In `Narrative-Architect/src/App.jsx`, locate the "Send message" button in the chat UI.
+   - When `isTyping` is true, display a spinning `Activity` icon instead of the static `Send` icon.
+   - This provides clearer feedback that the AI is processing the request, improving the user experience and matching the UX of other async operations in the app.
+2. **Ensure proper testing, verification, review, and reflection are done**
+   - Run the linter (`pnpm lint`) and build (`pnpm build`) to verify the changes.
+   - Review the code to ensure it meets the `< 50 lines` requirement and doesn't introduce any regressions.
