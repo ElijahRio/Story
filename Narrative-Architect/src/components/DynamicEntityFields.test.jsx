@@ -129,7 +129,6 @@ describe('DynamicEntityFields', () => {
   describe('Interactive Events', () => {
     test('triggers handleUpdateEntity when input values change', async () => {
       const entity = { id: '1', type: 'event', sequence_number: '10' };
-      const user = userEvent.setup();
       render(<DynamicEntityFields {...defaultProps} selectedEntity={entity} />);
 
       const sequenceInput = screen.getByLabelText(/Numeric Sequence \(Order\)/i);

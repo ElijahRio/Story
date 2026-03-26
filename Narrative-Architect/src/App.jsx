@@ -45,15 +45,19 @@ function calculateCosineSimilarity(vecA, vecB) {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
+// ⚡ Bolt: Hoist Regex to prevent recreation on every call
+const DATE_PATTERN = /(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})/;
+
 function parseDateString(dateStr) {
   if (!dateStr) return null;
   const str = safeString(dateStr);
-  const parts = str.match(/(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})/);
+  const parts = str.match(DATE_PATTERN);
   if (parts) {
+    // ⚡ Bolt: Use Date.UTC to skip string allocation and datetime parsing overhead
     if (parts[3].length === 4) {
-      return new Date(`${parts[3]}-${parts[2]}-${parts[1]}`);
+      return new Date(Date.UTC(parts[3], parts[2] - 1, parts[1]));
     } else if (parts[1].length === 4) {
-      return new Date(`${parts[1]}-${parts[2]}-${parts[3]}`);
+      return new Date(Date.UTC(parts[1], parts[2] - 1, parts[3]));
     }
   }
   const fb = new Date(str);
@@ -64,9 +68,10 @@ function getAge(birthStr, eventStr) {
   const b = parseDateString(birthStr);
   const e = parseDateString(eventStr);
   if (!b || !e) return null;
-  let age = e.getFullYear() - b.getFullYear();
-  const m = e.getMonth() - b.getMonth();
-  if (m < 0 || (m === 0 && e.getDate() < b.getDate())) {
+  // ⚡ Bolt: Use UTC methods for deterministic behavior matching Date.UTC
+  let age = e.getUTCFullYear() - b.getUTCFullYear();
+  const m = e.getUTCMonth() - b.getUTCMonth();
+  if (m < 0 || (m === 0 && e.getUTCDate() < b.getUTCDate())) {
     age--;
   }
   return age;
