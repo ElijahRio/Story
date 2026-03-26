@@ -657,43 +657,55 @@ export default function App() {
     // 1. Filter and sort events that involve at least one selected entity
     const relevantEvents = [];
 
-    // We need to efficiently check if an event involves any selected entity.
-    // Pre-calculate lowercased names of selected entities.
-    const selectedEntitiesLower = selectedMetroIds.map(id => {
-      const e = entitiesMap.get(id);
-      return e ? e.name.split(' (')[0].trim().toLowerCase() : '';
-    }).filter(Boolean);
+    // ⚡ Bolt: We need to efficiently check if an event involves any selected entity.
+    // Replaced nested O(N*M) array allocations and redundant `.some()` methods with
+    // a pre-computed map and optimized `for` loops to drastically reduce computation
+    // time and GC overhead during metro timeline rendering.
+    const selectedEntitiesMap = new Map();
+    for (let i = 0; i < selectedMetroIds.length; i++) {
+        const id = selectedMetroIds[i];
+        const e = entitiesMap.get(id);
+        if (e) {
+            const parsedName = e.name.split(' (')[0].trim().toLowerCase();
+            if (parsedName) {
+                selectedEntitiesMap.set(id, parsedName);
+            }
+        }
+    }
 
-    timelineEventsProcessed.forEach(event => {
-      // Fast check: does this event involve any of the selected entity names?
-      const involvesAny = selectedEntitiesLower.some(selectedName => {
-        // Find if the selected name matches or is a substring of any involved name in the event
-        return event.involvedNamesLower.some(involvedName =>
-          involvedName.includes(selectedName) || selectedName.includes(involvedName)
-        );
-      });
+    // Convert to array of entries for fast iteration
+    const selectedEntries = Array.from(selectedEntitiesMap.entries());
+    const selectedEntriesLen = selectedEntries.length;
 
-      if (involvesAny) {
-        // For each relevant event, figure out specifically WHICH selected IDs are involved
+    for (let i = 0; i < timelineEventsProcessed.length; i++) {
+        const event = timelineEventsProcessed[i];
+        const involvedNamesLower = event.involvedNamesLower;
+        const involvedNamesLen = involvedNamesLower.length;
+
         const involvedIds = [];
-        selectedMetroIds.forEach(id => {
-           const e = entitiesMap.get(id);
-           if (!e) return;
-           const selectedName = e.name.split(' (')[0].trim().toLowerCase();
-           const isInvolved = event.involvedNamesLower.some(involvedName =>
-            involvedName.includes(selectedName) || selectedName.includes(involvedName)
-          );
-          if (isInvolved) {
-            involvedIds.push(id);
-          }
-        });
 
-        relevantEvents.push({
-          ...event,
-          involvedMetroIds: involvedIds
-        });
-      }
-    });
+        // For each relevant event, figure out specifically WHICH selected IDs are involved
+        for (let j = 0; j < selectedEntriesLen; j++) {
+            const entry = selectedEntries[j];
+            const id = entry[0];
+            const selectedName = entry[1];
+
+            for (let k = 0; k < involvedNamesLen; k++) {
+                const involvedName = involvedNamesLower[k];
+                if (involvedName.includes(selectedName) || selectedName.includes(involvedName)) {
+                    involvedIds.push(id);
+                    break;
+                }
+            }
+        }
+
+        if (involvedIds.length > 0) {
+            relevantEvents.push({
+                ...event,
+                involvedMetroIds: involvedIds
+            });
+        }
+    }
 
     // 2. Constants for layout
     const laneSpacing = 60;
