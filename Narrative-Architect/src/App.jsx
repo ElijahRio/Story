@@ -1461,14 +1461,23 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
 
           <div className="h-px w-full bg-slate-800/60 mb-2"></div>
 
-          {filteredEntities.map(entity => (
-            <SidebarItem
-              key={entity.id}
-              entity={entity}
-              isSelected={selectedId === entity.id}
-              onClick={setSelectedId}
-            />
-          ))}
+          {filteredEntities.length === 0 ? (
+            <div className="px-4 py-8 text-center text-slate-500">
+              <Database size={24} className="mx-auto mb-2 opacity-20" />
+              <p className="text-[10px] font-mono uppercase tracking-widest">
+                No {activeFilter === 'all' ? '' : activeFilter + ' '}records found
+              </p>
+            </div>
+          ) : (
+            filteredEntities.map(entity => (
+              <SidebarItem
+                key={entity.id}
+                entity={entity}
+                isSelected={selectedId === entity.id}
+                onClick={setSelectedId}
+              />
+            ))
+          )}
         </div>
 
         {/* Manufacture Buttons */}
