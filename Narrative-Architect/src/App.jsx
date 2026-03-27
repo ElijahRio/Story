@@ -1514,19 +1514,27 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
         <div className="p-3 border-t border-slate-800/60 bg-[#0a0a0c] flex gap-2">
           <button
             onClick={handleExport}
-            className="flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border rounded text-[10px] uppercase tracking-widest transition-all border-slate-800 text-slate-400 hover:text-white"
+            className="flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border rounded text-[10px] uppercase tracking-widest transition-all border-slate-800 text-slate-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
             title="Save JSON to Desktop Folder"
           >
             <Download size={12} /> Backup
           </button>
           <input type="file" accept=".json" onChange={handleImport} ref={fileInputRef} className="hidden" />
-          <button onClick={() => fileInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border border-slate-800 rounded text-[10px] uppercase tracking-widest text-slate-400 hover:text-white transition-colors">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border border-slate-800 rounded text-[10px] uppercase tracking-widest text-slate-400 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+            title="Load JSON backup file"
+          >
             <Upload size={12} /> Restore
           </button>
         </div>
 
         <div className="p-3 border-t border-slate-800/60 bg-black/40">
-          <button onClick={() => setShowIngest(true)} className="w-full flex items-center justify-center gap-2 p-2 bg-teal-900/20 hover:bg-teal-900/40 border border-teal-800/50 rounded text-[10px] uppercase tracking-widest text-teal-500 hover:text-teal-400 transition-colors">
+          <button
+            onClick={() => setShowIngest(true)}
+            className="w-full flex items-center justify-center gap-2 p-2 bg-teal-900/20 hover:bg-teal-900/40 border border-teal-800/50 rounded text-[10px] uppercase tracking-widest text-teal-500 hover:text-teal-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            title="Open raw text extraction terminal"
+          >
             <Database size={12} /> Auto-Ingest Raw Text
           </button>
         </div>
@@ -1552,7 +1560,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 <button
                   onClick={handleComputeNetworkEmbeddings}
                   disabled={isComputingEmbeddings}
-                  className="px-4 py-2 bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/50 rounded text-xs text-rose-400 uppercase tracking-widest disabled:opacity-50 transition-colors flex items-center gap-2"
+                  title={isComputingEmbeddings ? "Computing vectors..." : "Calculate semantic similarities for the network graph"}
+                  className="px-4 py-2 bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/50 rounded text-xs text-rose-400 uppercase tracking-widest disabled:opacity-50 transition-colors flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
                 >
                   {isComputingEmbeddings ? <><Activity size={14} className="animate-spin" /> Computing Vectors...</> : <><BrainCircuit size={14} /> Calculate Semantic Links</>}
                 </button>
@@ -2151,7 +2160,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               <button
                 onClick={handleRunAudit}
                 disabled={isAuditing}
-                className="px-3 py-1.5 bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/50 rounded text-[10px] text-rose-400 uppercase tracking-widest disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                title={isAuditing ? "Scanning timeline..." : "Run continuous integration audit"}
+                className="px-3 py-1.5 bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/50 rounded text-[10px] text-rose-400 uppercase tracking-widest disabled:opacity-50 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
               >
                 {isAuditing ? <><Activity size={10} className="animate-spin" /> Scanning...</> : 'Run System Audit'}
               </button>
