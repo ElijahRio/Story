@@ -21,6 +21,13 @@ const safeString = (val) => {
   return String(val);
 };
 
+const handleAccessibleKeyDown = (callback) => (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    callback(e);
+  }
+};
+
 const sanitizeEntity = (entity) => {
   if (!entity) return entity;
   const sanitized = { ...entity };
@@ -1742,12 +1749,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                       onClick={() => setSelectedId(event.id)}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setSelectedId(event.id);
-                        }
-                      }}
+                      onKeyDown={handleAccessibleKeyDown(() => setSelectedId(event.id))}
                     >
                       <div className="font-bold text-slate-300 truncate mb-1" title={event.name}>{event.name}</div>
                       <div className="text-[9px] text-slate-500 font-mono flex items-center justify-between">
@@ -1828,12 +1830,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                           onClick={() => setSelectedId(event.id)}
                           role="button"
                           tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setSelectedId(event.id);
-                            }
-                          }}
+                          onKeyDown={handleAccessibleKeyDown(() => setSelectedId(event.id))}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <h3 className="text-lg font-bold text-slate-200">{event.name}</h3>
