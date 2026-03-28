@@ -1079,35 +1079,13 @@ export default function App() {
         const queryData = await queryRes.json();
         const queryVector = queryData.embeddings[0];
 
-        // ⚡ Bolt: Optimize O(N) API calls by reusing the existing networkEmbeddings cache.
-        // Only fetch embeddings for entities missing from the cache, similar to network view.
-        const newEmbeddings = { ...networkEmbeddings };
-        const missingEntities = entities.filter(e => !newEmbeddings[e.id]);
+        const entityTexts = entities.map(e => JSON.stringify(e));
+        const batchRes = await fetchOllama(embedUrl, { model: embedModel, input: entityTexts });
+        const batchData = await batchRes.json();
 
-        if (missingEntities.length > 0) {
-          const batchSize = 10;
-          for (let i = 0; i < missingEntities.length; i += batchSize) {
-            const batch = missingEntities.slice(i, i + batchSize);
-            const inputs = batch.map(e => {
-               return `${e.name}. ${safeString(e.description)}. ${safeString(e.systemic_inputs)}. ${safeString(e.systemic_outputs)}`;
-            });
-
-            const batchRes = await fetchOllama(embedUrl, { model: embedModel, input: inputs });
-            const batchData = await batchRes.json();
-
-            batch.forEach((e, idx) => {
-              newEmbeddings[e.id] = batchData.embeddings[idx];
-            });
-          }
-
-          // Persist the newly fetched embeddings back to state to benefit subsequent queries
-          // and the network view.
-          setNetworkEmbeddings(newEmbeddings);
-        }
-
-        const scoredEntities = entities.map((entity) => ({
+        const scoredEntities = entities.map((entity, index) => ({
           entity,
-          score: calculateCosineSimilarity(queryVector, newEmbeddings[entity.id])
+          score: calculateCosineSimilarity(queryVector, batchData.embeddings[index])
         })).sort((a, b) => b.score - a.score);
 
         const topMatches = scoredEntities.slice(0, 2).map(match => match.entity);
@@ -1151,7 +1129,7 @@ export default function App() {
     setIsTyping(true);
     setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: Executing Core Memory Dump. Archiving facility state...' }]);
 
-    const systemContext = `You are the Facility Overseer. Execute a CORE MEMORY DUMP. Analyze the entire facility registry and timeline provided below. Summarize your current structural understanding of the narrative, note any persistent logistical bottlenecks, and record your internal logic state. 
+    const systemContext = `You are the Facility Overseer. Execute a CORE MEMORY DUMP. Analyze the entire facility registry and timeline provided below. Summarize your current structural understanding of the narrative, note any persistent logistical bottlenecks, and record your internal logic state.
 
 You MUST output strictly a JSON object following this exact schema. Do NOT output markdown or conversation:
 {
@@ -1209,8 +1187,8 @@ You MUST output strictly a JSON object following this exact schema. Do NOT outpu
     if (!ingestText.trim() || isIngesting) return;
     setIsIngesting(true);
 
-    const systemContext = `You are a clinical data extraction algorithm operating within the Facility. Your absolute directive is to parse the following raw transcript and extract any distinct biological assets, personnel, technologies, anomalies, or TIMELINE EVENTS. 
-    
+    const systemContext = `You are a clinical data extraction algorithm operating within the Facility. Your absolute directive is to parse the following raw transcript and extract any distinct biological assets, personnel, technologies, anomalies, or TIMELINE EVENTS.
+
 You MUST output strictly a JSON object with a key "entities" containing an array of objects. Do NOT output any conversational text, markdown formatting, or explanations.
 
 Each object in the "entities" array must strictly follow this schema:
@@ -1312,7 +1290,7 @@ Each object in the "entities" array must strictly follow this schema:
     setIsAuditing(true);
     setActiveOverseerTab('audit');
 
-    const systemContext = `You are a highly analytical Continuous Integration (CI) Logic Auditor for a complex sci-fi horror database. 
+    const systemContext = `You are a highly analytical Continuous Integration (CI) Logic Auditor for a complex sci-fi horror database.
 Your sole function is to scan the provided registry and timeline events to identify plot holes, missing logistical links, unaddressed chronological gaps (including post-mortem paradoxes based on birth_date/death_date), or unexplained item/status transfers.
 
 You MUST output strictly a JSON object with a key "audits" containing an array of objects. Do NOT output conversational text or markdown formatting.
