@@ -1694,9 +1694,15 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               }}
             >
               {selectedMetroIds.length === 0 ? (
-                <div className="text-center text-slate-600 font-mono mt-20">Select an entity from the dropdown to start drawing the metro map.</div>
+                <div className="text-center text-slate-500 mt-20">
+                  <Route size={24} className="mx-auto mb-2 opacity-20" />
+                  <p className="text-[10px] font-mono uppercase tracking-widest">Select an entity from the dropdown to start drawing the metro map.</p>
+                </div>
               ) : metroLayout.events.length === 0 ? (
-                <div className="text-center text-slate-600 font-mono mt-20">No events found involving the selected entities.</div>
+                <div className="text-center text-slate-500 mt-20">
+                  <Route size={24} className="mx-auto mb-2 opacity-20" />
+                  <p className="text-[10px] font-mono uppercase tracking-widest">No events found involving the selected entities.</p>
+                </div>
               ) : (
                 <div style={{ width: metroLayout.width, height: metroLayout.height, minWidth: metroLayout.width, minHeight: metroLayout.height, position: 'relative' }}>
                   <svg width="100%" height="100%" style={{ position: 'absolute', top: 0, left: 0, zIndex: 0 }}>
@@ -1776,7 +1782,10 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               <div className="absolute left-16 top-10 bottom-10 w-0.5 bg-indigo-900/30"></div>
 
               {timelineEventsProcessed.length === 0 ? (
-                <div className="text-center text-slate-600 font-mono mt-20">No events logged in the registry.</div>
+                <div className="text-center text-slate-500 mt-20">
+                  <Clock size={24} className="mx-auto mb-2 opacity-20" />
+                  <p className="text-[10px] font-mono uppercase tracking-widest">No events logged in the registry.</p>
+                </div>
               ) : (
                 <div className="space-y-12">
                   {timelineEventsProcessed.map((event) => {
