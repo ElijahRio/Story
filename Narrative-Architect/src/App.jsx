@@ -41,15 +41,37 @@ const sanitizeEntity = (entity) => {
   return sanitized;
 };
 
-function calculateCosineSimilarity(vecA, vecB) {
-  let dotProduct = 0, normA = 0, normB = 0;
+// ⚡ Bolt: Pre-calculate vector magnitudes to avoid O(N^2) redundant multiplications
+function calculateMagnitude(vec) {
+  if (!vec) return 0;
+  let norm = 0;
+  for (let i = 0; i < vec.length; i++) {
+    norm += vec[i] * vec[i];
+  }
+  return norm;
+}
+
+function calculateCosineSimilarity(vecA, vecB, normA = 0, normB = 0) {
+  if (!vecA || !vecB) return 0;
+  let dotProduct = 0;
+
+  // Fast path if magnitudes are pre-computed
+  if (normA > 0 && normB > 0) {
+    for (let i = 0; i < vecA.length; i++) {
+      dotProduct += vecA[i] * vecB[i];
+    }
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  // Fallback if magnitudes aren't provided
+  let calcNormA = 0, calcNormB = 0;
   for (let i = 0; i < vecA.length; i++) {
     dotProduct += vecA[i] * vecB[i];
-    normA += vecA[i] * vecA[i];
-    normB += vecB[i] * vecB[i];
+    calcNormA += vecA[i] * vecA[i];
+    calcNormB += vecB[i] * vecB[i];
   }
-  if (normA === 0 || normB === 0) return 0;
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  if (calcNormA === 0 || calcNormB === 0) return 0;
+  return dotProduct / (Math.sqrt(calcNormA) * Math.sqrt(calcNormB));
 }
 
 // ⚡ Bolt: Hoist Regex to prevent recreation on every call
@@ -549,17 +571,28 @@ export default function App() {
 
     if (entityIds.length === 0) return cache;
 
+    // ⚡ Bolt: Pre-compute vector magnitudes in an O(N) pass to prevent recalculating
+    // them inside the O(N^2) similarity loop, drastically reducing math operations.
+    const magnitudes = new Map();
+    for (let i = 0; i < entityIds.length; i++) {
+      const id = entityIds[i];
+      const vec = networkEmbeddings[id];
+      if (vec) magnitudes.set(id, calculateMagnitude(vec));
+    }
+
     for (let i = 0; i < entityIds.length; i++) {
       const e1 = entityIds[i];
       const vec1 = networkEmbeddings[e1];
       if (!vec1) continue;
+      const mag1 = magnitudes.get(e1);
 
       for (let j = i + 1; j < entityIds.length; j++) {
         const e2 = entityIds[j];
         const vec2 = networkEmbeddings[e2];
         if (!vec2) continue;
+        const mag2 = magnitudes.get(e2);
 
-        const similarity = calculateCosineSimilarity(vec1, vec2);
+        const similarity = calculateCosineSimilarity(vec1, vec2, mag1, mag2);
         if (similarity > 0.75) {
           const weight = (similarity - 0.75) * 8;
           const key = e1 < e2 ? `${e1}|${e2}` : `${e2}|${e1}`;
@@ -1112,10 +1145,15 @@ export default function App() {
           setNetworkEmbeddings(newEmbeddings);
         }
 
-        const scoredEntities = entities.map((entity) => ({
-          entity,
-          score: calculateCosineSimilarity(queryVector, newEmbeddings[entity.id])
-        })).sort((a, b) => b.score - a.score);
+        const queryMag = calculateMagnitude(queryVector);
+        const scoredEntities = entities.map((entity) => {
+          const vec = newEmbeddings[entity.id];
+          const mag = vec ? calculateMagnitude(vec) : 0;
+          return {
+            entity,
+            score: calculateCosineSimilarity(queryVector, vec, queryMag, mag)
+          };
+        }).sort((a, b) => b.score - a.score);
 
         const topMatches = scoredEntities.slice(0, 2).map(match => match.entity);
         systemContext += `[VECTOR RETRIEVAL ACTIVE] - To prevent context overload, the system has isolated the 2 most mathematically relevant records to the user's query:\n${JSON.stringify(topMatches, null, 2)}\n\nBase your clinical analysis strictly on these isolated records.`;
