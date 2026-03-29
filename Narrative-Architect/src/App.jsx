@@ -1512,6 +1512,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <button
               onClick={() => setSelectedId(null)}
               aria-current={selectedId === null ? "true" : undefined}
+              title="Switch to Global Search View"
+              aria-label="Global Search View"
               className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${selectedId === null ? 'bg-teal-900/20 text-teal-400 shadow-inner border-teal-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
             >
               <span className="opacity-80"><Search size={14} /></span>
@@ -1520,6 +1522,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <button
               onClick={() => setSelectedId('timeline')}
               aria-current={selectedId === 'timeline' ? "true" : undefined}
+              title="Switch to Master Timeline View"
+              aria-label="Master Timeline View"
               className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${selectedId === 'timeline' ? 'bg-indigo-900/20 text-indigo-400 shadow-inner border-indigo-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
             >
               <span className="opacity-80"><Clock size={14} /></span>
@@ -1528,6 +1532,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <button
               onClick={() => setSelectedId('metro')}
               aria-current={selectedId === 'metro' ? "true" : undefined}
+              title="Switch to Metro Timeline View"
+              aria-label="Metro Timeline View"
               className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${selectedId === 'metro' ? 'bg-amber-900/20 text-amber-400 shadow-inner border-amber-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
             >
               <span className="opacity-80"><Route size={14} /></span>
@@ -1536,6 +1542,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <button
               onClick={() => setSelectedId('network')}
               aria-current={selectedId === 'network' ? "true" : undefined}
+              title="Switch to Network Graph View"
+              aria-label="Network Graph View"
               className={`w-full text-left px-3 py-2 border border-slate-800/60 rounded flex items-center gap-3 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${selectedId === 'network' ? 'bg-rose-900/20 text-rose-400 shadow-inner border-rose-800/50' : 'bg-black/20 hover:bg-slate-900/50 text-slate-500 hover:text-slate-300'}`}
             >
               <span className="opacity-80"><Network size={14} /></span>
@@ -2002,6 +2010,8 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 <button
                   onClick={() => handleMerge(selectedEntity.id, mergeTargetId)}
                   disabled={!mergeTargetId}
+                  title={!mergeTargetId ? "Select a target record to merge into first" : "Confirm merge"}
+                  aria-label="Confirm Merge"
                   className="px-4 py-1.5 bg-indigo-900/40 hover:bg-indigo-800/60 disabled:opacity-50 disabled:hover:bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-[9px] uppercase tracking-widest rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
                   Confirm Merge
