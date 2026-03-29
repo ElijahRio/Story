@@ -2075,6 +2075,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
           </div>
           <button
             aria-label="Settings"
+            title="Toggle Overseer Settings"
             onClick={() => setShowSettings(!showSettings)}
             className={`p-1.5 rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${showSettings ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
           >
@@ -2149,7 +2150,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   onClick={handleArchiveMemory}
                   disabled={isTyping}
                   className="px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 hover:border-emerald-700/50 rounded text-[9px] text-emerald-500 hover:text-emerald-400 disabled:opacity-50 uppercase tracking-widest transition-colors flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                  title="Force AI to summarize and save its current understanding"
+                  title={isTyping ? "Engine is currently processing..." : "Force AI to summarize and save its current understanding"}
                 >
                   {isArchiving ? <><Activity size={10} className="animate-spin" /> Dumping...</> : <><HardDrive size={10} /> Dump</>}
                 </button>
@@ -2157,7 +2158,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   onClick={handleParadoxScan}
                   disabled={isTyping}
                   className="px-2 py-1 bg-teal-900/20 hover:bg-rose-900/30 border border-teal-800/50 hover:border-rose-700/50 rounded text-[9px] text-teal-500 hover:text-rose-400 disabled:opacity-50 uppercase tracking-widest transition-colors flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-                  title="Scan entire database for contradictions"
+                  title={isTyping ? "Engine is currently processing..." : "Scan entire database for contradictions"}
                 >
                   {isScanning ? <><Activity size={10} className="animate-spin" /> Scanning...</> : <><Activity size={10} /> Scan</>}
                 </button>
@@ -2235,9 +2236,9 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
 
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
               {auditLogs.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-3">
-                  <CheckCircle size={32} className="opacity-20 text-emerald-500" />
-                  <p className="text-xs font-mono text-center uppercase tracking-widest">No outstanding logic loops detected.<br />Run audit to verify structure.</p>
+                <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3">
+                  <CheckCircle size={24} className="opacity-20 text-emerald-500" />
+                  <p className="text-[10px] font-mono text-center uppercase tracking-widest">No outstanding logic loops detected.<br />Run audit to verify structure.</p>
                 </div>
               ) : (
                 auditLogs.map((log) => (
@@ -2285,6 +2286,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 onClick={() => setShowIngest(false)}
                 className="text-slate-500 hover:text-slate-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 rounded p-1"
                 aria-label="Close ingestion terminal"
+                title="Close ingestion terminal"
               >
                 <X size={16} />
               </button>
