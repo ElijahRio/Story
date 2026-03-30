@@ -1548,7 +1548,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
           {filteredEntities.length === 0 ? (
             <div className="px-4 py-8 text-center text-slate-500">
               <Database size={24} className="mx-auto mb-2 opacity-20" />
-              <p className="text-[10px] font-mono uppercase tracking-widest">
+              <p className="text-xs font-mono uppercase tracking-widest">
                 No {activeFilter === 'all' ? '' : activeFilter + ' '}records found
               </p>
             </div>
@@ -1763,12 +1763,12 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               {selectedMetroIds.length === 0 ? (
                 <div className="text-center text-slate-500 mt-20">
                   <Route size={24} className="mx-auto mb-2 opacity-20" />
-                  <p className="text-[10px] font-mono uppercase tracking-widest">Select an entity from the dropdown to start drawing the metro map.</p>
+                  <p className="text-xs font-mono uppercase tracking-widest">Select an entity from the dropdown to start drawing the metro map.</p>
                 </div>
               ) : metroLayout.events.length === 0 ? (
                 <div className="text-center text-slate-500 mt-20">
                   <Route size={24} className="mx-auto mb-2 opacity-20" />
-                  <p className="text-[10px] font-mono uppercase tracking-widest">No events found involving the selected entities.</p>
+                  <p className="text-xs font-mono uppercase tracking-widest">No events found involving the selected entities.</p>
                 </div>
               ) : (
                 <div style={{ width: metroLayout.width, height: metroLayout.height, minWidth: metroLayout.width, minHeight: metroLayout.height, position: 'relative' }}>
@@ -1846,7 +1846,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               {timelineEventsProcessed.length === 0 ? (
                 <div className="text-center text-slate-500 mt-20">
                   <Clock size={24} className="mx-auto mb-2 opacity-20" />
-                  <p className="text-[10px] font-mono uppercase tracking-widest">No events logged in the registry.</p>
+                  <p className="text-xs font-mono uppercase tracking-widest">No events logged in the registry.</p>
                 </div>
               ) : (
                 <div className="space-y-12">
@@ -2238,7 +2238,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               {auditLogs.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3">
                   <CheckCircle size={24} className="opacity-20 text-emerald-500" />
-                  <p className="text-[10px] font-mono text-center uppercase tracking-widest">No outstanding logic loops detected.<br />Run audit to verify structure.</p>
+                  <p className="text-xs font-mono text-center uppercase tracking-widest">No outstanding logic loops detected.<br />Run audit to verify structure.</p>
                 </div>
               ) : (
                 auditLogs.map((log) => (
