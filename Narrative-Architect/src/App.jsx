@@ -77,20 +77,35 @@ function calculateCosineSimilarity(vecA, vecB, normA = 0, normB = 0) {
 // ⚡ Bolt: Hoist Regex to prevent recreation on every call
 const DATE_PATTERN = /(\d{1,4})[-/.](\d{1,2})[-/.](\d{1,4})/;
 
+// ⚡ Bolt: Cache parsed date objects to prevent redundant Regex evaluation and Date allocations
+const parsedDateCache = new Map();
+
 function parseDateString(dateStr) {
   if (!dateStr) return null;
   const str = safeString(dateStr);
+
+  if (parsedDateCache.has(str)) {
+    return parsedDateCache.get(str);
+  }
+
+  let result = null;
   const parts = str.match(DATE_PATTERN);
   if (parts) {
     // ⚡ Bolt: Use Date.UTC to skip string allocation and datetime parsing overhead
     if (parts[3].length === 4) {
-      return new Date(Date.UTC(parts[3], parts[2] - 1, parts[1]));
+      result = new Date(Date.UTC(parts[3], parts[2] - 1, parts[1]));
     } else if (parts[1].length === 4) {
-      return new Date(Date.UTC(parts[1], parts[2] - 1, parts[3]));
+      result = new Date(Date.UTC(parts[1], parts[2] - 1, parts[3]));
     }
   }
-  const fb = new Date(str);
-  return isNaN(fb.getTime()) ? null : fb;
+
+  if (!result) {
+    const fb = new Date(str);
+    result = isNaN(fb.getTime()) ? null : fb;
+  }
+
+  parsedDateCache.set(str, result);
+  return result;
 }
 
 function getAge(birthStr, eventStr) {
