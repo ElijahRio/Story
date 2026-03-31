@@ -5,3 +5,7 @@
 ## 2026-03-30 - Accessible Empty States
 **Learning:** The text size in empty states must be large enough to be legible and accessible while preserving the visual aesthetic of the interface. Using `text-[10px]` violates basic a11y rules.
 **Action:** Use a minimum of `text-xs` combined with styling properties like `uppercase`, `font-mono`, and `tracking-widest` to achieve a similar dense look without sacrificing legibility.
+
+## 2025-03-31 - Contextual Placeholders for AI Inputs
+**Learning:** When an interface has a global AI or search input that changes behavior based on the current view or selection, a static placeholder (like "Input directive...") fails to communicate the system's current context. This leads to user uncertainty about what data the AI is evaluating.
+**Action:** Always dynamically update placeholders to reflect the active context (e.g., "Query [Entity Name]..." or "Query master timeline..."), providing immediate transparency and guiding appropriate user queries.

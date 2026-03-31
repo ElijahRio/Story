@@ -2226,7 +2226,11 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  placeholder={selectedEntity ? "Query active record logic..." : "Input directive..."}
+                  placeholder={
+                    selectedEntity ? `Query ${selectedEntity.name} logic...` :
+                    selectedId === 'timeline' ? "Query master timeline causality..." :
+                    "Query global registry via Vector Engine..."
+                  }
                   className="w-full bg-[#15181e] border border-slate-700 rounded pl-3 pr-10 py-3 text-sm text-slate-200 focus:outline-none focus:border-teal-600 resize-none h-16 font-mono transition-colors shadow-inner"
                 />
                 <button
