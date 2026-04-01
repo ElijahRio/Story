@@ -395,17 +395,36 @@ export default function App() {
     [...(entitiesByType['event'] || [])].sort((a, b) => (Number(a.sequence_number) || 0) - (Number(b.sequence_number) || 0))
     , [entitiesByType]);
 
-  // ⚡ Bolt: Pre-process involved_records into arrays of lowercased strings to avoid repeated string splitting and toLowerCase calls in render
+  // ⚡ Bolt: Pre-process involved_records into arrays of lowercased strings to avoid repeated string splitting and toLowerCase calls in render.
+  // Replaced chained array methods (.map().map()) with a single-pass iteration and pre-allocated arrays to reduce intermediate allocations and memory churn.
   const timelineEventsProcessed = useMemo(() => {
-    return timelineEvents.map(event => {
+    const len = timelineEvents.length;
+    const result = new Array(len);
+    for (let i = 0; i < len; i++) {
+      const event = timelineEvents[i];
       const safeRecords = safeString(event.involved_records);
-      const involvedNames = safeRecords ? safeRecords.split(',').map(s => s.trim()) : [];
-      return {
+      let involvedNames = [];
+      let involvedNamesLower = [];
+
+      if (safeRecords) {
+        const parts = safeRecords.split(',');
+        const partsLen = parts.length;
+        involvedNames = new Array(partsLen);
+        involvedNamesLower = new Array(partsLen);
+        for (let j = 0; j < partsLen; j++) {
+          const trimmed = parts[j].trim();
+          involvedNames[j] = trimmed;
+          involvedNamesLower[j] = trimmed.toLowerCase();
+        }
+      }
+
+      result[i] = {
         ...event,
         involvedNames,
-        involvedNamesLower: involvedNames.map(name => name.toLowerCase())
+        involvedNamesLower
       };
-    });
+    }
+    return result;
   }, [timelineEvents]);
 
   // ⚡ Bolt: Memoize the list of entities available for the Metro Timeline dropdown
