@@ -48,7 +48,7 @@ function calculateMagnitude(vec) {
   for (let i = 0; i < vec.length; i++) {
     norm += vec[i] * vec[i];
   }
-  return norm;
+  return Math.sqrt(norm);
 }
 
 function calculateCosineSimilarity(vecA, vecB, normA = 0, normB = 0) {
@@ -60,7 +60,9 @@ function calculateCosineSimilarity(vecA, vecB, normA = 0, normB = 0) {
     for (let i = 0; i < vecA.length; i++) {
       dotProduct += vecA[i] * vecB[i];
     }
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    // ⚡ Bolt: Math.sqrt has been moved to the pre-computation step (calculateMagnitude)
+    // to prevent redundant execution in this hot O(N^2) inner loop.
+    return dotProduct / (normA * normB);
   }
 
   // Fallback if magnitudes aren't provided
