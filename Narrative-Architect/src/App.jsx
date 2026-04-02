@@ -2185,17 +2185,19 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               <div className="flex gap-1.5">
                 <button
                   onClick={handleArchiveMemory}
-                  disabled={isTyping}
+                  disabled={isTyping || isArchiving}
+                  aria-label="Force AI to summarize and save its current understanding"
                   className="px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 hover:border-emerald-700/50 rounded text-[9px] text-emerald-500 hover:text-emerald-400 disabled:opacity-50 uppercase tracking-widest transition-colors flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                  title={isTyping ? "Engine is currently processing..." : "Force AI to summarize and save its current understanding"}
+                  title={isTyping || isArchiving ? "Engine is currently processing..." : "Force AI to summarize and save its current understanding"}
                 >
                   {isArchiving ? <><Activity size={10} className="animate-spin" /> Dumping...</> : <><HardDrive size={10} /> Dump</>}
                 </button>
                 <button
                   onClick={handleParadoxScan}
-                  disabled={isTyping}
+                  disabled={isTyping || isScanning}
+                  aria-label="Scan entire database for contradictions"
                   className="px-2 py-1 bg-teal-900/20 hover:bg-rose-900/30 border border-teal-800/50 hover:border-rose-700/50 rounded text-[9px] text-teal-500 hover:text-rose-400 disabled:opacity-50 uppercase tracking-widest transition-colors flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
-                  title={isTyping ? "Engine is currently processing..." : "Scan entire database for contradictions"}
+                  title={isTyping || isScanning ? "Engine is currently processing..." : "Scan entire database for contradictions"}
                 >
                   {isScanning ? <><Activity size={10} className="animate-spin" /> Scanning...</> : <><Activity size={10} /> Scan</>}
                 </button>
