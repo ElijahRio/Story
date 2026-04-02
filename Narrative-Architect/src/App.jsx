@@ -1148,10 +1148,15 @@ export default function App() {
 
         // ⚡ Bolt: Optimize O(N) API calls by reusing the existing networkEmbeddings cache.
         // Only fetch embeddings for entities missing from the cache, similar to network view.
-        const newEmbeddings = { ...networkEmbeddings };
-        const missingEntities = entities.filter(e => !newEmbeddings[e.id]);
+        const missingEntities = [];
+        for (let i = 0; i < entities.length; i++) {
+          if (!networkEmbeddings[entities[i].id]) {
+            missingEntities.push(entities[i]);
+          }
+        }
 
         if (missingEntities.length > 0) {
+          const newEmbeddings = { ...networkEmbeddings };
           const batchSize = 10;
           for (let i = 0; i < missingEntities.length; i += batchSize) {
             const batch = missingEntities.slice(i, i + batchSize);
