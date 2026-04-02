@@ -399,11 +399,23 @@ export default function App() {
   const timelineEventsProcessed = useMemo(() => {
     return timelineEvents.map(event => {
       const safeRecords = safeString(event.involved_records);
-      const involvedNames = safeRecords ? safeRecords.split(',').map(s => s.trim()) : [];
+      if (!safeRecords) return { ...event, involvedNames: [], involvedNamesLower: [] };
+
+      const parts = safeRecords.split(',');
+      const pLen = parts.length;
+      const involvedNames = new Array(pLen);
+      const involvedNamesLower = new Array(pLen);
+
+      for (let j = 0; j < pLen; j++) {
+        const trimmed = parts[j].trim();
+        involvedNames[j] = trimmed;
+        involvedNamesLower[j] = trimmed.toLowerCase();
+      }
+
       return {
         ...event,
         involvedNames,
-        involvedNamesLower: involvedNames.map(name => name.toLowerCase())
+        involvedNamesLower
       };
     });
   }, [timelineEvents]);
