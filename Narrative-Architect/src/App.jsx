@@ -42,13 +42,15 @@ const sanitizeEntity = (entity) => {
 };
 
 // ⚡ Bolt: Pre-calculate vector magnitudes to avoid O(N^2) redundant multiplications
+// By performing Math.sqrt() in this O(N) pass, we avoid O(N^2) Math.sqrt() calls
+// inside calculateCosineSimilarity's inner loop.
 function calculateMagnitude(vec) {
   if (!vec) return 0;
   let norm = 0;
   for (let i = 0; i < vec.length; i++) {
     norm += vec[i] * vec[i];
   }
-  return norm;
+  return Math.sqrt(norm);
 }
 
 function calculateCosineSimilarity(vecA, vecB, normA = 0, normB = 0) {
@@ -60,7 +62,8 @@ function calculateCosineSimilarity(vecA, vecB, normA = 0, normB = 0) {
     for (let i = 0; i < vecA.length; i++) {
       dotProduct += vecA[i] * vecB[i];
     }
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    // ⚡ Bolt: Directly multiply norms instead of re-calculating square roots.
+    return dotProduct / (normA * normB);
   }
 
   // Fallback if magnitudes aren't provided
@@ -1155,6 +1158,7 @@ export default function App() {
           }
         }
 
+        let currentEmbeddings = networkEmbeddings;
         if (missingEntities.length > 0) {
           const newEmbeddings = { ...networkEmbeddings };
           const batchSize = 10;
@@ -1175,11 +1179,12 @@ export default function App() {
           // Persist the newly fetched embeddings back to state to benefit subsequent queries
           // and the network view.
           setNetworkEmbeddings(newEmbeddings);
+          currentEmbeddings = newEmbeddings;
         }
 
         const queryMag = calculateMagnitude(queryVector);
         const scoredEntities = entities.map((entity) => {
-          const vec = newEmbeddings[entity.id];
+          const vec = currentEmbeddings[entity.id];
           const mag = vec ? calculateMagnitude(vec) : 0;
           return {
             entity,
