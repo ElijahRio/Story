@@ -1529,7 +1529,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
         </div>
 
         {/* Filters */}
-        <div role="tablist" aria-label="Entity Types" className="flex flex-wrap text-[10px] uppercase font-bold tracking-widest border-b border-slate-800/60 bg-[#0a0a0c]">
+        <div role="tablist" aria-label="Entity Types" className="flex flex-wrap text-xs uppercase font-bold tracking-widest border-b border-slate-800/60 bg-[#0a0a0c]">
           {['all', 'asset', 'personnel', 'technology', 'anomaly', 'event', 'memory'].map(f => (
             <button
               key={f}
@@ -1611,7 +1611,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
 
         {/* Manufacture Buttons */}
         <div className="p-3 border-t border-slate-800/60 bg-black/20">
-          <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-2">Initialize Record</p>
+          <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-2">Initialize Record</p>
           <div className="grid grid-cols-6 gap-1.5">
             <button aria-label="Log Asset" onClick={() => createNewEntity('asset')} className="p-1.5 bg-[#15181e] hover:bg-rose-950/40 border border-slate-800 hover:border-rose-900/50 rounded flex justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500" title="Log Asset"><UserX size={14} className="text-rose-500" /></button>
             <button aria-label="Log Personnel" onClick={() => createNewEntity('personnel')} className="p-1.5 bg-[#15181e] hover:bg-slate-800 border border-slate-800 rounded flex justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400" title="Log Personnel"><UserCog size={14} className="text-slate-400" /></button>
@@ -1626,7 +1626,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
         <div className="p-3 border-t border-slate-800/60 bg-[#0a0a0c] flex gap-2">
           <button
             onClick={handleExport}
-            className="flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border rounded text-[10px] uppercase tracking-widest transition-all border-slate-800 text-slate-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+            className="flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border rounded text-xs uppercase tracking-widest transition-all border-slate-800 text-slate-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
             title="Save JSON to Desktop Folder"
           >
             <Download size={12} /> Backup
@@ -1634,7 +1634,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
           <input type="file" accept=".json" onChange={handleImport} ref={fileInputRef} className="hidden" />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border border-slate-800 rounded text-[10px] uppercase tracking-widest text-slate-400 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+            className="flex-1 flex items-center justify-center gap-2 p-1.5 bg-[#15181e] hover:bg-slate-800 border border-slate-800 rounded text-xs uppercase tracking-widest text-slate-400 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
             title="Load JSON backup file"
           >
             <Upload size={12} /> Restore
@@ -1644,7 +1644,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
         <div className="p-3 border-t border-slate-800/60 bg-black/40">
           <button
             onClick={() => setShowIngest(true)}
-            className="w-full flex items-center justify-center gap-2 p-2 bg-teal-900/20 hover:bg-teal-900/40 border border-teal-800/50 rounded text-[10px] uppercase tracking-widest text-teal-500 hover:text-teal-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            className="w-full flex items-center justify-center gap-2 p-2 bg-teal-900/20 hover:bg-teal-900/40 border border-teal-800/50 rounded text-xs uppercase tracking-widest text-teal-500 hover:text-teal-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             title="Open raw text extraction terminal"
           >
             <Database size={12} /> Auto-Ingest Raw Text
@@ -1665,7 +1665,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 </div>
                 <div>
                   <h1 className="text-2xl font-light tracking-wide text-rose-100">Network Map</h1>
-                  <p className="text-[10px] text-rose-500/70 uppercase tracking-widest mt-1 font-mono">Entity Connectivity Visualization</p>
+                  <p className="text-xs text-rose-500/70 uppercase tracking-widest mt-1 font-mono">Entity Connectivity Visualization</p>
                 </div>
               </div>
               <div>
@@ -1725,7 +1725,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 </div>
                 <div>
                   <h1 className="text-2xl font-light tracking-wide text-amber-100">Metro Timeline</h1>
-                  <p className="text-[10px] text-amber-500/70 uppercase tracking-widest mt-1 font-mono">Entity Intersection Visualization</p>
+                  <p className="text-xs text-amber-500/70 uppercase tracking-widest mt-1 font-mono">Entity Intersection Visualization</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -1750,7 +1750,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   }}
                   disabled={!metroAddTargetId}
                   title={!metroAddTargetId ? 'Select an entity first' : 'Add line to timeline'}
-                  className="px-3 py-1.5 bg-amber-900/40 hover:bg-amber-800/60 disabled:opacity-50 border border-amber-700 text-amber-300 text-[10px] uppercase tracking-widest rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-1"
+                  className="px-3 py-1.5 bg-amber-900/40 hover:bg-amber-800/60 disabled:opacity-50 border border-amber-700 text-amber-300 text-xs uppercase tracking-widest rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-1"
                 >
                   <Plus size={12} /> Add Line
                 </button>
@@ -1863,7 +1863,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                       onKeyDown={handleAccessibleKeyDown(() => setSelectedId(event.id))}
                     >
                       <div className="font-bold text-slate-300 truncate mb-1" title={event.name}>{event.name}</div>
-                      <div className="text-[9px] text-slate-500 font-mono flex items-center justify-between">
+                      <div className="text-xs text-slate-500 font-mono flex items-center justify-between">
                         <span>#{event.sequence_number}</span>
                         <span>{event.timestamp}</span>
                       </div>
@@ -1881,7 +1881,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               </div>
               <div>
                 <h1 className="text-2xl font-light tracking-wide text-indigo-100">Chronological Flow</h1>
-                <p className="text-[10px] text-indigo-500/70 uppercase tracking-widest mt-1 font-mono">Facility Event Sequence Mapping</p>
+                <p className="text-xs text-indigo-500/70 uppercase tracking-widest mt-1 font-mono">Facility Event Sequence Mapping</p>
               </div>
             </div>
 
@@ -1920,7 +1920,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                           key={idx}
                           type="button"
                           onClick={(e) => { e.stopPropagation(); if (foundEntity) setSelectedId(foundEntity.id); }}
-                          className={`cursor-pointer text-[9px] uppercase tracking-widest px-2 py-1 rounded border flex items-center gap-1 font-mono hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 ${deathWarning ? 'bg-rose-950/40 text-rose-400 border-rose-900/50 focus-visible:ring-rose-500' : 'bg-slate-900 text-slate-400 border-slate-800 focus-visible:ring-slate-400'}`}
+                          className={`cursor-pointer text-xs uppercase tracking-widest px-2 py-1 rounded border flex items-center gap-1 font-mono hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 ${deathWarning ? 'bg-rose-950/40 text-rose-400 border-rose-900/50 focus-visible:ring-rose-500' : 'bg-slate-900 text-slate-400 border-slate-800 focus-visible:ring-slate-400'}`}
                         >
                           {deathWarning ? <AlertTriangle size={10} /> : <GitCommit size={10} />}
                           {name}{ageText}
@@ -1950,12 +1950,12 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                             <h3 className="text-lg font-bold text-slate-200">{event.name}</h3>
                             <div className="flex items-center gap-2">
                               <Calendar size={12} className="text-indigo-400" />
-                              <span className="text-[10px] font-mono px-2 py-1 bg-indigo-950/40 text-indigo-300 rounded border border-indigo-900/50">{event.timestamp}</span>
+                              <span className="text-xs font-mono px-2 py-1 bg-indigo-950/40 text-indigo-300 rounded border border-indigo-900/50">{event.timestamp}</span>
                             </div>
                           </div>
                           <p className="text-sm text-slate-400 mb-4 leading-relaxed">{event.description}</p>
                           <div className="flex flex-wrap gap-2">
-                            {renderedTags.length > 0 ? renderedTags : <span className="text-[9px] uppercase tracking-widest text-slate-600 font-mono">No parsed records</span>}
+                            {renderedTags.length > 0 ? renderedTags : <span className="text-xs uppercase tracking-widest text-slate-600 font-mono">No parsed records</span>}
                           </div>
                         </div>
                       </div>
@@ -1980,7 +1980,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                     onChange={(e) => handleUpdateEntity('name', e.target.value)}
                     className="bg-transparent text-2xl font-light tracking-wide text-white outline-none w-full border-b border-transparent focus:border-slate-700 transition-colors"
                   />
-                  <div className="flex gap-4 text-[10px] text-slate-500 uppercase tracking-widest mt-2 font-mono">
+                  <div className="flex gap-4 text-xs text-slate-500 uppercase tracking-widest mt-2 font-mono">
                     <span className="flex items-center gap-1"><Database size={10} /> ID: {selectedEntity.id}</span>
                     <span className="flex items-center gap-1"><Activity size={10} /> TYPE: {selectedEntity.type}</span>
                   </div>
@@ -1997,7 +1997,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 </button>
                 {confirmDeleteId === selectedEntity.id ? (
                   <div className="flex items-center gap-1 bg-rose-500/10 rounded px-2 py-1 border border-rose-500/20">
-                    <span className="text-[10px] uppercase tracking-widest text-rose-500 font-bold mr-1">Purge?</span>
+                    <span className="text-xs uppercase tracking-widest text-rose-500 font-bold mr-1">Purge?</span>
                     <button
                       aria-label="Confirm purge record"
                       onClick={() => deleteEntity(selectedEntity.id)}
@@ -2032,7 +2032,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             {showMergeUI && (
               <div className="bg-indigo-950/20 border-b border-indigo-900/50 p-3 flex items-center gap-3">
                 <GitMerge size={14} className="text-indigo-400" />
-                <label htmlFor="merge-target" className="text-[10px] uppercase tracking-widest text-indigo-400 font-bold">Merge Into:</label>
+                <label htmlFor="merge-target" className="text-xs uppercase tracking-widest text-indigo-400 font-bold">Merge Into:</label>
                 <select
                   id="merge-target"
                   value={mergeTargetId}
@@ -2049,7 +2049,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   disabled={!mergeTargetId}
                   title={!mergeTargetId ? "Select a target record to merge into first" : "Confirm merge"}
                   aria-label="Confirm Merge"
-                  className="px-4 py-1.5 bg-indigo-900/40 hover:bg-indigo-800/60 disabled:opacity-50 disabled:hover:bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-[9px] uppercase tracking-widest rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                  className="px-4 py-1.5 bg-indigo-900/40 hover:bg-indigo-800/60 disabled:opacity-50 disabled:hover:bg-indigo-900/40 border border-indigo-700 text-indigo-300 text-xs uppercase tracking-widest rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
                   Confirm Merge
                 </button>
@@ -2162,7 +2162,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 className="w-full bg-[#0a0a0c] border border-slate-700 rounded px-2 py-1.5 text-slate-300 outline-none focus:border-teal-600 transition-colors"
               />
             </div>
-            <div className="text-[10px] text-teal-500/70 p-2 bg-teal-950/20 rounded border border-teal-900/30">
+            <div className="text-xs text-teal-500/70 p-2 bg-teal-950/20 rounded border border-teal-900/30">
               Browser Local Storage Auto-Save is active. No manual save required to prevent data loss.
             </div>
           </div>
@@ -2174,7 +2174,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             role="tab"
             aria-selected={activeOverseerTab === 'terminal'}
             onClick={() => setActiveOverseerTab('terminal')}
-            className={`flex-1 py-2 text-[10px] uppercase font-bold tracking-widest transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:z-10 relative ${activeOverseerTab === 'terminal' ? 'bg-teal-950/20 text-teal-500 border-b-2 border-teal-500' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`flex-1 py-2 text-xs uppercase font-bold tracking-widest transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:z-10 relative ${activeOverseerTab === 'terminal' ? 'bg-teal-950/20 text-teal-500 border-b-2 border-teal-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
             Terminal
           </button>
@@ -2182,22 +2182,22 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             role="tab"
             aria-selected={activeOverseerTab === 'audit'}
             onClick={() => setActiveOverseerTab('audit')}
-            className={`flex-1 py-2 text-[10px] uppercase font-bold tracking-widest flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:z-10 relative ${activeOverseerTab === 'audit' ? 'bg-rose-950/20 text-rose-500 border-b-2 border-rose-500' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`flex-1 py-2 text-xs uppercase font-bold tracking-widest flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:z-10 relative ${activeOverseerTab === 'audit' ? 'bg-rose-950/20 text-rose-500 border-b-2 border-rose-500' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            CI Audit {auditLogs.length > 0 && <span className="px-1.5 py-0.5 bg-rose-500 text-white rounded-full text-[8px] leading-none">{auditLogs.length}</span>}
+            CI Audit {auditLogs.length > 0 && <span className="px-1.5 py-0.5 bg-rose-500 text-white rounded-full text-xs leading-none">{auditLogs.length}</span>}
           </button>
         </div>
 
         {activeOverseerTab === 'terminal' ? (
           <>
             <div className="px-4 py-2 border-b border-slate-800/60 bg-teal-950/10 flex justify-between items-center shadow-inner">
-              <span className="text-[9px] text-teal-600/70 uppercase tracking-widest font-mono flex items-center gap-1"><BrainCircuit size={10} /> Macro Directives</span>
+              <span className="text-xs text-teal-600/70 uppercase tracking-widest font-mono flex items-center gap-1"><BrainCircuit size={10} /> Macro Directives</span>
               <div className="flex gap-1.5">
                 <button
                   onClick={handleArchiveMemory}
                   disabled={isTyping || isArchiving}
                   aria-label="Force AI to summarize and save its current understanding"
-                  className="px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 hover:border-emerald-700/50 rounded text-[9px] text-emerald-500 hover:text-emerald-400 disabled:opacity-50 uppercase tracking-widest transition-colors flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                  className="px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 hover:border-emerald-700/50 rounded text-xs text-emerald-500 hover:text-emerald-400 disabled:opacity-50 uppercase tracking-widest transition-colors flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                   title={isTyping || isArchiving ? "Engine is currently processing..." : "Force AI to summarize and save its current understanding"}
                 >
                   {isArchiving ? <><Activity size={10} className="animate-spin" /> Dumping...</> : <><HardDrive size={10} /> Dump</>}
@@ -2206,7 +2206,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   onClick={handleParadoxScan}
                   disabled={isTyping || isScanning}
                   aria-label="Scan entire database for contradictions"
-                  className="px-2 py-1 bg-teal-900/20 hover:bg-rose-900/30 border border-teal-800/50 hover:border-rose-700/50 rounded text-[9px] text-teal-500 hover:text-rose-400 disabled:opacity-50 uppercase tracking-widest transition-colors flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                  className="px-2 py-1 bg-teal-900/20 hover:bg-rose-900/30 border border-teal-800/50 hover:border-rose-700/50 rounded text-xs text-teal-500 hover:text-rose-400 disabled:opacity-50 uppercase tracking-widest transition-colors flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                   title={isTyping || isScanning ? "Engine is currently processing..." : "Scan entire database for contradictions"}
                 >
                   {isScanning ? <><Activity size={10} className="animate-spin" /> Scanning...</> : <><Activity size={10} /> Scan</>}
@@ -2217,13 +2217,13 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <div className="flex-1 overflow-y-auto p-4 space-y-5">
               {chatHistory.map((msg) => (
                 <div key={msg.id || crypto.randomUUID()} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <span className={`text-[9px] uppercase tracking-widest mb-1 ${msg.role === 'user' ? 'text-slate-500' : msg.role === 'system' ? 'text-rose-500/50' : 'text-teal-600'}`}>
+                  <span className={`text-xs uppercase tracking-widest mb-1 ${msg.role === 'user' ? 'text-slate-500' : msg.role === 'system' ? 'text-rose-500/50' : 'text-teal-600'}`}>
                     {msg.role === 'user' ? 'Director Input' : msg.role === 'system' ? 'System Status' : 'Overseer Logic'}
                   </span>
                   <div className={`p-3 text-[13px] max-w-[92%] leading-relaxed font-mono ${msg.role === 'user'
                     ? 'bg-slate-800 text-slate-200 rounded-l-lg rounded-tr-lg border border-slate-700'
                     : msg.role === 'system'
-                      ? 'bg-black text-rose-500/70 text-[10px] border border-rose-900/30 rounded w-full text-center'
+                      ? 'bg-black text-rose-500/70 text-xs border border-rose-900/30 rounded w-full text-center'
                       : 'bg-teal-950/20 border border-teal-900/40 text-teal-100 rounded-r-lg rounded-tl-lg shadow-sm'
                     }`}>
                     {msg.content}
@@ -2232,7 +2232,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               ))}
               {isTyping && (
                 <div className="flex flex-col items-start">
-                  <span className="text-[9px] uppercase tracking-widest text-teal-600 mb-1">Processing</span>
+                  <span className="text-xs uppercase tracking-widest text-teal-600 mb-1">Processing</span>
                   <div className="p-3 bg-teal-950/20 border border-teal-900/40 rounded-r-lg rounded-tl-lg flex gap-1.5">
                     <span className="w-1.5 h-1.5 bg-teal-600 rounded-full animate-pulse"></span>
                     <span className="w-1.5 h-1.5 bg-teal-600 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></span>
@@ -2267,7 +2267,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                   {isTyping ? <Activity size={16} className="animate-spin" /> : <Send size={16} />}
                 </button>
               </div>
-              <p className="text-[9px] text-slate-600 text-center mt-2 font-mono uppercase tracking-widest">Shift+Enter for newline</p>
+              <p className="text-xs text-slate-600 text-center mt-2 font-mono uppercase tracking-widest">Shift+Enter for newline</p>
             </div>
           </>
         ) : (
@@ -2275,13 +2275,13 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
             <div className="p-4 border-b border-slate-800/60 bg-black/40 flex justify-between items-center">
               <div>
                 <h3 className="text-xs font-bold text-rose-500 uppercase tracking-widest flex items-center gap-2"><Bug size={14} /> Logic Tracker</h3>
-                <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Pending Narrative Bugs</p>
+                <p className="text-xs text-slate-500 uppercase tracking-widest mt-1">Pending Narrative Bugs</p>
               </div>
               <button
                 onClick={handleRunAudit}
                 disabled={isAuditing}
                 title={isAuditing ? "Scanning timeline..." : "Run continuous integration audit"}
-                className="px-3 py-1.5 bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/50 rounded text-[10px] text-rose-400 uppercase tracking-widest disabled:opacity-50 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                className="px-3 py-1.5 bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/50 rounded text-xs text-rose-400 uppercase tracking-widest disabled:opacity-50 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
               >
                 {isAuditing ? <><Activity size={10} className="animate-spin" /> Scanning...</> : 'Run System Audit'}
               </button>
@@ -2301,12 +2301,12 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                         {log.severity === 'CRITICAL' && <AlertTriangle size={12} className="text-rose-500" />}
                         {log.severity === 'WARNING' && <AlertTriangle size={12} className="text-amber-500" />}
                         {log.severity === 'NOTE' && <Bell size={12} className="text-blue-400" />}
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${log.severity === 'CRITICAL' ? 'text-rose-500' : log.severity === 'WARNING' ? 'text-amber-500' : 'text-blue-400'
+                        <span className={`text-xs font-bold uppercase tracking-widest ${log.severity === 'CRITICAL' ? 'text-rose-500' : log.severity === 'WARNING' ? 'text-amber-500' : 'text-blue-400'
                           }`}>
                           {log.severity}
                         </span>
                       </div>
-                      <span className="text-[10px] font-mono text-slate-500 px-2 py-0.5 bg-black/40 rounded border border-slate-800">
+                      <span className="text-xs font-mono text-slate-500 px-2 py-0.5 bg-black/40 rounded border border-slate-800">
                         {log.target}
                       </span>
                     </div>
@@ -2314,7 +2314,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
 
                     <button
                       onClick={() => resolveAudit(log.id)}
-                      className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 rounded text-[9px] text-emerald-500 uppercase tracking-widest transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                      className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 px-2 py-1 bg-emerald-900/20 hover:bg-emerald-900/40 border border-emerald-800/50 rounded text-xs text-emerald-500 uppercase tracking-widest transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                     >
                       Resolve
                     </button>
