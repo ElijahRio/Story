@@ -574,19 +574,25 @@ export default function App() {
     // ⚡ Bolt: Use the memoized entity dictionary to skip RegExp instantiation during rendering.
     // Also use primitive string `.includes()` checks as a fast path to skip expensive RegExp
     // evaluations for entities whose names don't even appear as substrings.
-    const result = entityLinkDictionary.filter(e => {
-      if (e.id === currentId) return false;
+    // Replaced .filter() with a standard for-loop to avoid O(N) callback overhead and intermediate array allocation.
+    const result = [];
+    const len = entityLinkDictionary.length;
+    for (let i = 0; i < len; i++) {
+      const e = entityLinkDictionary[i];
+      if (e.id === currentId) continue;
 
       // Fast path string check: skip expensive regex if the name doesn't even exist in the text
       if (!lowerText.includes(e.baseNameLower) &&
           (!e.strippedNameLower || !lowerText.includes(e.strippedNameLower))) {
-        return false;
+        continue;
       }
 
-      return e.matchFullName.test(lowerText) ||
-             (e.matchBaseName && e.matchBaseName.test(lowerText)) ||
-             (e.matchStrippedName && e.matchStrippedName.test(lowerText));
-    });
+      if (e.matchFullName.test(lowerText) ||
+          (e.matchBaseName && e.matchBaseName.test(lowerText)) ||
+          (e.matchStrippedName && e.matchStrippedName.test(lowerText))) {
+        result.push(e);
+      }
+    }
 
     entityCache.set(safeText, result);
     return result;

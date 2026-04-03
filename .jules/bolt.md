@@ -8,3 +8,7 @@
 ## 2024-05-24 - Math.sqrt in Vector Math Loop Optimization
 **Learning:** Even when vector magnitudes are pre-computed in an O(N) loop before an O(N^2) inner loop, calculating `Math.sqrt()` on those pre-computed values inside the inner O(N^2) loop re-introduces unnecessary heavy calculations (`N^2` total square roots).
 **Action:** When pre-computing vector magnitudes for O(N^2) cosine similarity calculations, perform the heavy `Math.sqrt()` operation during the initial O(N) magnitude calculation pass so the resulting pre-calculated magnitude already contains the square root. The fast-path in `calculateCosineSimilarity` can then just use simple multiplication `(magA * magB)`.
+
+## 2025-02-28 - [Optimize Array Filtering in Hot Paths]
+**Learning:** Replaced `.filter()` array method with a standard `for` loop in a frequently executed hot path (`getDetectedLinks`). Standard `for` loops combined with manual `.push()` operations drastically outperform higher-order array methods by avoiding callback overhead and preventing intermediate array allocations.
+**Action:** Always prefer manual `for` loop iterations with primitive arrays over `.filter()`, `.map()`, or `.forEach()` in highly-trafficked code blocks to reduce memory churn and maximize execution speed.
