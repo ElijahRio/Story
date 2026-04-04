@@ -885,17 +885,26 @@ export default function App() {
 
     try {
       const embedUrl = llmUrl.replace('/api/chat', '/api/embed');
-      const newEmbeddings = { ...networkEmbeddings };
 
-      // Batch entities for embedding
-      const batchSize = 10;
-      for (let i = 0; i < entities.length; i += batchSize) {
-        const batch = entities.slice(i, i + batchSize);
-        // Only compute for entities missing embeddings
-        const toCompute = batch.filter(e => !newEmbeddings[e.id]);
+      // ⚡ Bolt: Optimize O(N) cache spread and array filtering.
+      // Avoid cloning the entire networkEmbeddings object and calling .filter()
+      // in a loop. Only clone the cache if missing entities are actually found.
+      const missingEntities = [];
+      for (let i = 0; i < entities.length; i++) {
+        if (!networkEmbeddings[entities[i].id]) {
+          missingEntities.push(entities[i]);
+        }
+      }
 
-        if (toCompute.length > 0) {
-          const inputs = toCompute.map(e => {
+      if (missingEntities.length > 0) {
+        const newEmbeddings = { ...networkEmbeddings };
+
+        // Batch entities for embedding
+        const batchSize = 10;
+        for (let i = 0; i < missingEntities.length; i += batchSize) {
+          const batch = missingEntities.slice(i, i + batchSize);
+
+          const inputs = batch.map(e => {
              // Create a rich text representation for semantic meaning
              return `${e.name}. ${safeString(e.description)}. ${safeString(e.systemic_inputs)}. ${safeString(e.systemic_outputs)}`;
           });
@@ -903,13 +912,13 @@ export default function App() {
           const batchRes = await fetchOllama(embedUrl, { model: embedModel, input: inputs });
 
           const batchData = await batchRes.json();
-          toCompute.forEach((e, idx) => {
+          batch.forEach((e, idx) => {
             newEmbeddings[e.id] = batchData.embeddings[idx];
           });
         }
-      }
 
-      setNetworkEmbeddings(newEmbeddings);
+        setNetworkEmbeddings(newEmbeddings);
+      }
       setChatHistory(prev => [...prev, { id: crypto.randomUUID(), role: 'system', content: '[SYSTEM]: Network embedding generation complete. Connections optimized.' }]);
     } catch (error) {
       console.error(error);
