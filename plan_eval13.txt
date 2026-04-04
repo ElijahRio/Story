@@ -1,0 +1,9 @@
+Wait, `text-[9px]` is even worse for readability! I should replace `text-[9px]` and `text-[10px]` with `text-xs`. Wait, there are `text-[10px]` and `text-[9px]` in `App.jsx.orig`? Wait, `App.jsx.orig` is a backup file. Let's look at `App.jsx`.
+
+```bash
+grep -rn "text-\[10px\]" Narrative-Architect/src/App.jsx
+```
+Output was empty! Let me check `App.jsx` line 1428:
+```bash
+sed -n '1420,1430p' Narrative-Architect/src/App.jsx
+```

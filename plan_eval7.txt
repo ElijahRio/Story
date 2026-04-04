@@ -1,0 +1,119 @@
+The rule: "Ensure strict form accessibility in 'Narrative-Architect' by associating explicit `<label>` elements with their respective form controls (`<select>`, `<input>`, `<textarea>`) using matching `htmlFor` and `id` attributes. Actively search for raw inputs inside specialized nested components to ensure they map correctly instead of falling back to `aria-label`, as explicit labels preserve the visual click-to-focus benefit."
+
+Let's check `Terminal Input` and `Entity Name`.
+
+`Entity Name` (line 1976)
+```jsx
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    aria-label="Entity Name"
+                    value={selectedEntity.name}
+                    onChange={(e) => handleUpdateEntity('name', e.target.value)}
+                    className="bg-transparent text-2xl font-light tracking-wide text-white outline-none w-full border-b border-transparent focus:border-slate-700 transition-colors"
+                  />
+```
+If we add `<label htmlFor="entity-name-input" className="sr-only">Entity Name</label>` and `id="entity-name-input"` to the input.
+Wait, "explicit labels preserve the visual click-to-focus benefit" - a `sr-only` label doesn't give a visual click-to-focus benefit. But for a title input, it might not be possible to have a visible label without changing the design, so `sr-only` is standard. Let's see if there are other `<input>`s or `<textarea>`s or `<select>`.
+
+Wait! The "Select target record to merge into..." (line 2040):
+```jsx
+                <select
+                  className="flex-1 bg-[#0a0a0c] border border-indigo-900/50 rounded p-1.5 text-xs text-slate-300 outline-none focus:border-indigo-500 font-mono focus-visible:ring-2 focus-visible:ring-indigo-400"
+                >
+                  <option value="">Select target record to keep...</option>
+```
+Line 2035:
+```jsx
+              <div className="p-4 bg-indigo-950/20 border-b border-indigo-900/50 flex items-center gap-3 shadow-inner">
+                <label htmlFor="merge-target" className="text-xs uppercase tracking-widest text-indigo-400 font-bold">Merge Into:</label>
+                <select
+                  id="merge-target"
+```
+So that `<select>` has a visible label `Merge Into:`.
+
+What about line 1732? "Select entity to add"
+```jsx
+              <div className="flex items-center gap-2">
+                <label htmlFor="metro-entity-select" className="sr-only">Select entity to add</label>
+                <select
+                  id="metro-entity-select"
+```
+It uses `<label htmlFor="..." className="sr-only">...`
+
+Terminal Input (line 2250):
+```jsx
+            <div className="p-4 border-t border-slate-800/60 bg-[#0a0a0c]">
+              <div className="relative">
+                <textarea
+                  aria-label="Terminal Input"
+                  value={chatInput}
+```
+We can add `<label htmlFor="terminal-chat-input" className="sr-only">Terminal Input</label>` and `id="terminal-chat-input"`.
+
+What about "DynamicEntityFields.jsx" where it renders `InputField` and `TextAreaField`? Those components already use explicit labels.
+
+Let's check the UX rules:
+"Add an empty state with helpful call-to-action"
+"Improve error message clarity with actionable steps"
+"Add tooltip explaining disabled button state"
+"Add focus visible styles for keyboard navigation"
+"Add loading spinner to async submit button"
+"Add ARIA label to icon-only button"
+"Improve form validation with inline feedback"
+
+Look at the journal: "When styling keyboard focus states for UI elements or dynamic entity lists in 'Narrative-Architect', use `focus:outline-none focus-visible:ring-2` combined with a dynamic ring color that matches the item's specific theme color... to maintain a cohesive visual aesthetic while prioritizing accessibility."
+
+Is there any missing focus state?
+Let's check the Entity Name input:
+```jsx
+                  <input
+                    type="text"
+                    aria-label="Entity Name"
+                    value={selectedEntity.name}
+                    onChange={(e) => handleUpdateEntity('name', e.target.value)}
+                    className="bg-transparent text-2xl font-light tracking-wide text-white outline-none w-full border-b border-transparent focus:border-slate-700 transition-colors"
+                  />
+```
+It has `focus:border-slate-700` but no `focus-visible:ring-2`. Since it's an entity, maybe we should add `focus-visible:ring-2` with the theme color?
+Wait, the Entity list in SidebarItem has `focus-visible:ring-2` with dynamic colors.
+
+What about other UX enhancements?
+"When implementing empty states in 'Narrative-Architect' (e.g., for filtered lists without results), match the application's aesthetic by utilizing reduced-opacity Lucide-react icons (e.g., `opacity-20`) combined with accessible typography (at minimum `text-xs font-mono uppercase tracking-widest text-slate-500`) for the descriptive text." -> It's already there in the Sidebar (lines 1591-1596).
+
+Is there a missing empty state somewhere?
+"No parsed records" in timeline events?
+```jsx
+                          <div className="flex flex-wrap gap-2">
+                            {renderedTags.length > 0 ? renderedTags : <span className="text-xs uppercase tracking-widest text-slate-600 font-mono">No parsed records</span>}
+                          </div>
+```
+That's not exactly an empty state page, it's inline text.
+
+Let's look at `chatHistory`:
+```jsx
+            <div className="flex-1 overflow-y-auto p-4 space-y-5">
+              {chatHistory.map((msg) => (
+```
+Wait, what if `chatHistory` is empty?
+```jsx
+            <div className="flex-1 overflow-y-auto p-4 space-y-5">
+              {chatHistory.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3 opacity-50">
+                  <Terminal size={48} className="opacity-20" />
+                  <p className="text-xs font-mono uppercase tracking-widest text-center">
+                    System awaiting input...
+                  </p>
+                </div>
+              ) : (
+                chatHistory.map((msg) => (
+                  ...
+                ))
+              )}
+            </div>
+```
+Actually, wait, `chatHistory` does NOT have an empty state?
+Let's see:
+```bash
+sed -n '2215,2230p' Narrative-Architect/src/App.jsx
+```

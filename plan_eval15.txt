@@ -1,0 +1,60 @@
+Ah, wait. Did another subagent already do this for `App.jsx`? Yes! In `App.jsx.orig`, the old version, there are many `text-[10px]` and `text-[9px]`. The new `App.jsx` does not have them!
+This means another agent already fixed them in `App.jsx`, but missed the ones in `src/components/DynamicEntityFields.jsx`, `src/components/TextAreaField.jsx`, and `src/components/InputField.jsx`.
+
+So, changing the remaining `text-[10px]` and `text-[9px]` to `text-xs` in `src/components/` is my micro-UX improvement!
+
+Wait, let's verify if there is any other better UX enhancement from the list.
+"Add ARIA label to icon-only button"
+"Add explicit `<label>` elements... Actively search for raw inputs inside specialized nested components to ensure they map correctly instead of falling back to `aria-label`"
+Wait, earlier I checked `InputField` and `TextAreaField`, and they use `React.useId()` and DO have explicit `<label>` elements!
+```jsx
+const InputField = ({ label, colorClass, ...inputProps }) => {
+  const id = React.useId();
+  return (
+    <div className="space-y-1.5 flex-1">
+      <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
+      <input
+        id={id}
+...
+```
+This is perfectly accessible regarding labels.
+
+Is there any missing "empty state with helpful call-to-action"?
+What about "Improve error message clarity with actionable steps"?
+What about "Add loading spinner to async submit button"?
+Wait, wait. "In 'Narrative-Architect', for UX improvements involving asynchronous operations (like LLM processing or data dumping), always provide explicit visual loading states by changing the button text and incorporating a spinning `<Activity className="animate-spin" />` icon, ensuring `disabled` attributes and `focus-visible` classes remain intact."
+
+Let's check if there are buttons doing async operations missing this.
+`App.jsx`:
+- `handleExport`: not async?
+- `handleImport`: not async?
+- `handleIngestRawText`: it has `<Activity className="animate-spin" /> Extraction in progress...` (line 2371 in App.jsx.orig, let's check current App.jsx).
+- `handleArchiveMemory` (Dump): `isArchiving ? <><Activity size={10} className="animate-spin" /> Dumping...</> : <><HardDrive size={10} /> Dump</>`
+- `handleParadoxScan` (Scan): `isScanning ? <><Activity size={10} className="animate-spin" /> Scanning...</> : <><Activity size={10} /> Scan</>`
+- `handleSendMessage`: `isTyping ? <Activity size={16} className="animate-spin" /> : <Send size={16} />`
+- `handleComputeNetworkEmbeddings`: `isComputingEmbeddings ? <><Activity size={14} className="animate-spin" /> Computing Vectors...</> : <><BrainCircuit size={14} /> Calculate Semantic Links</>`
+- `handleProfileAudit`: `isAuditingProfile ? <><Activity size={10} className="animate-spin" /> Analyzing Timeline...</> : 'Generate Report'`
+
+Wait, `isAuditingProfile` is in `DynamicEntityFields.jsx`:
+```jsx
+        <button
+          onClick={() => handleProfileAudit(selectedEntity)}
+          disabled={isAuditingProfile}
+          title={isAuditingProfile ? "Analysis in progress..." : "Run behavioral consistency audit"}
+          className="px-3 py-1.5 bg-teal-950/30 hover:bg-teal-900/50 border border-teal-900/50 rounded text-[9px] uppercase tracking-widest text-teal-400 hover:text-teal-300 disabled:opacity-50 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+        >
+          {isAuditingProfile ? <><Activity size={10} className="animate-spin" /> Analyzing Timeline...</> : 'Generate Report'}
+        </button>
+```
+Wait, the text changes to "Analyzing Timeline...", but for the non-loading state, it just says `'Generate Report'`. According to the rule: "by changing the button text and incorporating a spinning `<Activity className="animate-spin" />` icon, ensuring `disabled` attributes and `focus-visible` classes remain intact." It does this already.
+
+What about "Add tooltip explaining disabled button state"?
+"For interactive icon-only buttons or buttons that can enter a disabled state in 'Narrative-Architect', always include comprehensive `title` attributes to visually explain their function or disabled state (e.g., 'Cannot send empty directive'), significantly improving accessibility and clarity."
+Let's review the title of `disabled` buttons:
+1. "Add Line" in Metro Timeline (line 1751): `title={!metroAddTargetId ? 'Select an entity first' : 'Add line to timeline'}`
+2. "Confirm Merge" (line 2049): `title={!mergeTargetId ? "Select a target record to merge into first" : "Confirm merge"}`
+3. "Dump" (line 2198): `title={isTyping || isArchiving ? "Engine is currently processing..." : "Force AI to summarize and save its current understanding"}`
+4. "Scan" (line 2207): `title={isTyping || isScanning ? "Engine is currently processing..." : "Scan entire database for contradictions"}`
+5. "Send query" (line 2263): `title={isTyping ? "Engine is processing..." : !chatInput.trim() ? "Input required" : "Send query"}`
+6. "Generate Report" (DynamicEntityFields.jsx): `title={isAuditingProfile ? "Analysis in progress..." : "Run behavioral consistency audit"}`
+Wait! The disabled condition for "Generate Report" is `disabled={isAuditingProfile}`. Its title is `title={isAuditingProfile ? "Analysis in progress..." : "Run behavioral consistency audit"}`. That looks fine.

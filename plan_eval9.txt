@@ -1,0 +1,14 @@
+1. I found the `chatHistory` does NOT have an empty state. It just maps over `chatHistory`. If it's empty, it's just blank. Let me check the initial state of `chatHistory`.
+
+`grep -n "useState.*chatHistory" Narrative-Architect/src/App.jsx`
+It probably is `const [chatHistory, setChatHistory] = useState([]);` Wait, does it start with an initial message?
+
+```jsx
+const [chatHistory, setChatHistory] = useState([
+  { role: 'assistant', content: "Overseer Engine initialized. Vector network linked. Standing by for queries regarding current record..." }
+]);
+```
+Let me check!
+```bash
+grep -n -A 5 "chatHistory" Narrative-Architect/src/App.jsx
+```

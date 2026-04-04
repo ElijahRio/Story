@@ -1,0 +1,89 @@
+Let's look at `chatHistory`: it is initialized with something:
+```jsx
+const [chatHistory, setChatHistory] = useState([
+  { role: 'assistant', content: '...' }
+]);
+```
+
+What about "Add focus visible styles for keyboard navigation" or "Add ARIA label to icon-only button" or "Add explicit `<label>` elements"?
+
+Memory rule: "Ensure strict form accessibility in 'Narrative-Architect' by associating explicit `<label>` elements with their respective form controls (`<select>`, `<input>`, `<textarea>`) using matching `htmlFor` and `id` attributes. Actively search for raw inputs inside specialized nested components to ensure they map correctly instead of falling back to `aria-label`, as explicit labels preserve the visual click-to-focus benefit."
+
+Let's do this one! It explicitly says to find raw inputs/textareas and associate explicit `<label>` elements.
+1. The Entity Name input in the main panel (`App.jsx` line 1976). It currently has `aria-label="Entity Name"`. I can replace it with `<label htmlFor="entity-name-input" className="sr-only">Entity Name</label>` and add `id="entity-name-input"`. BUT the rule says "as explicit labels preserve the visual click-to-focus benefit". A `sr-only` label does NOT preserve the visual click-to-focus benefit.
+What if we add a visually hidden label but wait, if it's visually hidden, how can you click it? "explicit labels preserve the visual click-to-focus benefit." -> This means the label SHOULD be visible! Or at least, if there's text nearby, make that text the label.
+
+Wait! Let's check `Terminal Input` in `App.jsx` line 2252.
+```jsx
+                <textarea
+                  aria-label="Terminal Input"
+                  value={chatInput}
+...
+```
+There's no text nearby to click.
+
+Let's see if there are any forms without labels.
+Line 1732: `<label htmlFor="metro-entity-select" className="sr-only">Select entity to add</label>` - This is `sr-only`.
+
+What about line 1976: Entity Name input.
+```jsx
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    aria-label="Entity Name"
+                    value={selectedEntity.name}
+```
+
+Wait! Are there other inputs in specialized nested components?
+"Actively search for raw inputs inside specialized nested components to ensure they map correctly instead of falling back to `aria-label`, as explicit labels preserve the visual click-to-focus benefit."
+
+Let's grep for `<input` inside the codebase.
+```bash
+grep -rn "<input" Narrative-Architect/src/
+```
+We found:
+```
+Narrative-Architect/src/components/InputField.jsx:9:      <input
+Narrative-Architect/src/App.jsx:1634:          <input type="file" accept=".json" onChange={handleImport} ref={fileInputRef} className="hidden" />
+Narrative-Architect/src/App.jsx:1976:                  <input
+Narrative-Architect/src/App.jsx:2137:              <input
+Narrative-Architect/src/App.jsx:2147:              <input
+Narrative-Architect/src/App.jsx:2157:              <input
+```
+
+Wait! In `Narrative-Architect/src/components/InputField.jsx`:
+```jsx
+import React from 'react';
+
+const InputField = ({ label, colorClass, ...inputProps }) => {
+  const id = React.useId();
+  return (
+    <div className="space-y-1.5 flex-1">
+      <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
+      <input
+        id={id}
+        type="text"
+        className="w-full bg-slate-950/50 border border-slate-800 rounded px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-slate-500 font-mono shadow-inner"
+        {...inputProps}
+      />
+    </div>
+  );
+};
+```
+This looks fine! It has `label htmlFor={id}`.
+
+What about `TextAreaField.jsx`?
+```jsx
+const TextAreaField = ({ label, colorClass, detectedLinks, onNavigate, ...textareaProps }) => {
+  const id = React.useId();
+  return (
+    <div className="space-y-1.5 flex-1 flex flex-col">
+      <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>
+      <textarea
+        id={id}
+...
+```
+This also looks fine.
+
+What about the "Actively search for raw inputs inside specialized nested components" part?
+Maybe there's a file I missed?

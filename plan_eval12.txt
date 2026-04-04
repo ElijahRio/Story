@@ -1,0 +1,42 @@
+Ah! I see that these buttons ALREADY have very comprehensive `title` attributes explaining their state!
+
+So what can I improve for UX/A11y today?
+Look at the journal rules.
+"In 'Narrative-Architect', for global AI or search inputs (like the Overseer terminal) that change behavior based on the current view or selection, dynamically update the `placeholder` attribute to reflect the active context (e.g., 'Query [Entity Name]...' vs 'Query master timeline...') to provide system transparency, rather than using a static generic placeholder."
+
+Let's check the terminal chat input (line 2250):
+```jsx
+                  placeholder={
+                    selectedEntity ? `Query ${selectedEntity.name} logic...` :
+                    selectedId === 'timeline' ? "Query master timeline causality..." :
+                    "Query global registry via Vector Engine..."
+                  }
+```
+It already does this!
+
+What else?
+"When implementing empty states in 'Narrative-Architect' (e.g., for filtered lists without results), match the application's aesthetic by utilizing reduced-opacity Lucide-react icons (e.g., `opacity-20`) combined with accessible typography (at minimum `text-xs font-mono uppercase tracking-widest text-slate-500`) for the descriptive text. Never use `text-[10px]`, as it violates web accessibility guidelines for readability."
+
+Let's search for `text-[10px]`!
+Earlier I found many instances of `text-[10px]`!
+```bash
+grep -rn "text-\[10px\]" Narrative-Architect/src/
+```
+Wait, the memory specifically says: "Never use `text-[10px]`, as it violates web accessibility guidelines for readability."
+I can fix all `text-[10px]` by changing them to `text-[11px]` or `text-xs` (which is 12px)!
+
+Let's check:
+`Narrative-Architect/src/components/DynamicEntityFields.jsx:45:        <label htmlFor="behavioral-audit-textarea" className="text-[10px] font-bold uppercase tracking-widest text-teal-500 flex items-center gap-1.5">`
+`Narrative-Architect/src/components/TextAreaField.jsx:8:      <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>`
+`Narrative-Architect/src/components/InputField.jsx:7:      <label htmlFor={id} className={`text-[10px] font-bold uppercase tracking-widest ${colorClass}`}>{label}</label>`
+
+App.jsx:
+`text-[10px]` used in tabs, filters, buttons, small texts, error messages...
+
+If I change all `text-[10px]` to `text-xs` (12px), it makes them much more readable and conforms to the memory!
+Wait, the memory says "Never use `text-[10px]`, as it violates web accessibility guidelines for readability."
+This is a perfect UX/Accessibility micro-improvement!
+
+Let me replace `text-[10px]` with `text-xs` everywhere.
+
+Let's verify how many `text-[10px]` there are in `App.jsx`, `DynamicEntityFields.jsx`, `TextAreaField.jsx`, `InputField.jsx`.
