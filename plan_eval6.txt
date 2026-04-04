@@ -1,0 +1,75 @@
+1. We have forms using `<input>` and `<textarea>`.
+2. I found some `<input>` tags using `aria-label` but not explicit `<label>` elements connected via `id` in `App.jsx`.
+3. In `App.jsx`, lines 1976-1983:
+```jsx
+                  <input
+                    type="text"
+                    aria-label="Entity Name"
+                    value={selectedEntity.name}
+                    onChange={(e) => handleUpdateEntity('name', e.target.value)}
+                    className="bg-transparent text-2xl font-light tracking-wide text-white outline-none w-full border-b border-transparent focus:border-slate-700 transition-colors"
+                  />
+```
+This is an `<input>` for the Entity Name without a visible `<label>` but with an `aria-label`. Wait, is this the only one? No, there are some in Overseer Tab.
+```jsx
+            <div className="p-4 border-t border-slate-800/60 bg-[#0a0a0c]">
+              <div className="relative">
+                <label htmlFor="terminal-chat-input" className="sr-only">Terminal Input</label>
+                <textarea
+                  id="terminal-chat-input"
+                  value={chatInput}
+...
+```
+Wait, I should check the memory constraints:
+"Ensure strict form accessibility in 'Narrative-Architect' by associating explicit `<label>` elements with their respective form controls (`<select>`, `<input>`, `<textarea>`) using matching `htmlFor` and `id` attributes. Actively search for raw inputs inside specialized nested components to ensure they map correctly instead of falling back to `aria-label`, as explicit labels preserve the visual click-to-focus benefit."
+
+Let's check `TextAreaField` and `InputField`.
+`InputField` has an `id` that it randomly generates (`React.useId()`) and attaches to `htmlFor` and `id`. Same for `TextAreaField`.
+
+What about the direct `<input>` tags in `App.jsx`?
+Line 1976: The "Entity Name" input.
+Line 2351: Auto-ingest textarea. Has `<label htmlFor="raw-transcript-input"...` and textarea has `id="raw-transcript-input"`.
+Line 1634: `<input type="file" ... />`.
+Line 2137, 2147, 2157: Terminal Endpoint, Local Chat Engine, Vector Embedding Engine inputs. They have `id` and `label htmlFor`.
+
+What about the "Entity Name" input? It has `aria-label="Entity Name"`.
+```jsx
+                  <label htmlFor="entity-name-input" className="sr-only">Entity Name</label>
+                  <input
+                    id="entity-name-input"
+                    type="text"
+                    value={selectedEntity.name}
+                    onChange={(e) => handleUpdateEntity('name', e.target.value)}
+                    className="bg-transparent text-2xl font-light tracking-wide text-white outline-none w-full border-b border-transparent focus:border-slate-700 transition-colors"
+                  />
+```
+
+Another memory: "When styling keyboard focus states for UI elements or dynamic entity lists in 'Narrative-Architect', use `focus:outline-none focus-visible:ring-2` combined with a dynamic ring color that matches the item's specific theme color... to maintain a cohesive visual aesthetic while prioritizing accessibility."
+
+Let's see if the "Entity Name" input needs `focus-visible:ring-2`.
+Line 1976:
+```jsx
+                  <input
+                    type="text"
+                    aria-label="Entity Name"
+                    value={selectedEntity.name}
+                    onChange={(e) => handleUpdateEntity('name', e.target.value)}
+                    className="bg-transparent text-2xl font-light tracking-wide text-white outline-none w-full border-b border-transparent focus:border-slate-700 transition-colors"
+                  />
+```
+If we add `focus-visible:ring-2`, what color? Maybe based on `selectedEntity.type`?
+Wait, the memory specifically says: "Ensure strict form accessibility in 'Narrative-Architect' by associating explicit `<label>` elements with their respective form controls (`<select>`, `<input>`, `<textarea>`) using matching `htmlFor` and `id` attributes. Actively search for raw inputs inside specialized nested components to ensure they map correctly instead of falling back to `aria-label`, as explicit labels preserve the visual click-to-focus benefit."
+But if I make it `<label htmlFor="entity-name-input" className="sr-only">Entity Name</label>`, it's `sr-only`, so it doesn't give a visual click-to-focus benefit.
+What if I change the input for Terminal Input?
+```jsx
+            <div className="p-4 border-t border-slate-800/60 bg-[#0a0a0c]">
+              <div className="relative">
+                <textarea
+                  aria-label="Terminal Input"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+```
+Ah! `chatInput` textarea does NOT have a label. It has `aria-label="Terminal Input"`.
+I can add a label for `Terminal Input`, maybe `sr-only`? The memory says "explicit labels preserve the visual click-to-focus benefit." But wait, "Terminal Input" is inside the chat area, usually it has a visual label or just a placeholder?
+
+Let's look at `chatInput` again:
