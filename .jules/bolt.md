@@ -12,3 +12,7 @@
 ## 2025-02-28 - [Optimize Array Filtering in Hot Paths]
 **Learning:** Replaced `.filter()` array method with a standard `for` loop in a frequently executed hot path (`getDetectedLinks`). Standard `for` loops combined with manual `.push()` operations drastically outperform higher-order array methods by avoiding callback overhead and preventing intermediate array allocations.
 **Action:** Always prefer manual `for` loop iterations with primitive arrays over `.filter()`, `.map()`, or `.forEach()` in highly-trafficked code blocks to reduce memory churn and maximize execution speed.
+
+## 2025-02-28 - Optimize Cache Copying in Hot Paths
+**Learning:** Replaced `.filter()` array method combined with full object clone `{ ...networkEmbeddings }` in an embedding request loop with an initial existence check. O(N) cache spread without verifying first whether there's anything to add is slow.
+**Action:** When updating a cache (especially large objects with thousands of keys like `networkEmbeddings`), do not clone the cache upfront inside a loop. Instead, do an initial scan using a standard `for` loop to find missing entries, and only if missing entries are found, spread the cache object once.
