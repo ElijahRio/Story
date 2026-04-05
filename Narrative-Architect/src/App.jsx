@@ -490,8 +490,26 @@ export default function App() {
     });
   }, [entities, entitiesMap]);
 
+  // --- Advanced Link Detection Engine ---
+  // ⚡ Bolt: Compute global validation hash once per render.
+  // This string joining is O(N) and prevents doing it inside `getDetectedLinks` which would be O(N^2).
+  const globalNamesHash = useMemo(() => {
+    let hash = '';
+    for (let i = 0; i < entityLinkDictionary.length; i++) {
+        hash += entityLinkDictionary[i].name + '|';
+    }
+    return hash;
+  }, [entityLinkDictionary]);
+
+  const persistentMatchCacheRef = useRef({ dictRef: null, cache: new Map() });
+
   // ⚡ Bolt: Memoize the loose string matching resolution for timeline entities to avoid O(N*M) lookups on every render
   const timelineEntityMatchCache = useMemo(() => {
+    if (persistentMatchCacheRef.current.dictRef !== entityLinkDictionary) {
+      persistentMatchCacheRef.current.cache.clear();
+      persistentMatchCacheRef.current.dictRef = entityLinkDictionary;
+    }
+
     const cache = new Map();
     // Get all unique lowercased names used in all events
     const uniqueNames = new Set();
@@ -510,6 +528,15 @@ export default function App() {
 
     // Compute the match once for each unique name
     uniqueNames.forEach(lowerName => {
+      // Fast path: Check persistent cache
+      if (persistentMatchCacheRef.current.cache.has(lowerName)) {
+         const cachedEntity = persistentMatchCacheRef.current.cache.get(lowerName);
+         if (cachedEntity) {
+            cache.set(lowerName, cachedEntity);
+         }
+         return;
+      }
+
       // Fast path: O(1) exact match lookup
       let foundEntity = exactMatchMap.get(lowerName);
 
@@ -522,23 +549,14 @@ export default function App() {
         });
       }
 
+      persistentMatchCacheRef.current.cache.set(lowerName, foundEntity || null);
+
       if (foundEntity) {
         cache.set(lowerName, foundEntity);
       }
     });
     return cache;
   }, [timelineEventsProcessed, entityLinkDictionary]);
-
-  // --- Advanced Link Detection Engine ---
-  // ⚡ Bolt: Compute global validation hash once per render.
-  // This string joining is O(N) and prevents doing it inside `getDetectedLinks` which would be O(N^2).
-  const globalNamesHash = useMemo(() => {
-    let hash = '';
-    for (let i = 0; i < entityLinkDictionary.length; i++) {
-        hash += entityLinkDictionary[i].name + '|';
-    }
-    return hash;
-  }, [entityLinkDictionary]);
 
   // ⚡ Bolt: Added a useRef cache.
   // Caches the resulting array iteration per entity ID based on their current text.
