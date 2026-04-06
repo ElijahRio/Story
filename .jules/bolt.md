@@ -16,3 +16,6 @@
 ## 2025-02-28 - Optimize Cache Copying in Hot Paths
 **Learning:** Replaced `.filter()` array method combined with full object clone `{ ...networkEmbeddings }` in an embedding request loop with an initial existence check. O(N) cache spread without verifying first whether there's anything to add is slow.
 **Action:** When updating a cache (especially large objects with thousands of keys like `networkEmbeddings`), do not clone the cache upfront inside a loop. Instead, do an initial scan using a standard `for` loop to find missing entries, and only if missing entries are found, spread the cache object once.
+## 2024-06-03 - Memoize timeline entity loose matches
+**Learning:** Computing partial/loose match resolutions for strings during `useMemo` hooks mapping arrays (like `timelineEntityMatchCache`) can still be slow if the operations aren't persisted across renders, resulting in O(N*M) CPU bottlenecks during React re-renders when other derived state updates.
+**Action:** Utilize a `useRef` based persistent mapping to cache intermediate resolution mapping states in order to avoid repeating O(N) Array.find lookups for loose matches over multiple render cycles.
