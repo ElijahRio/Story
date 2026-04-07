@@ -1499,9 +1499,12 @@ Each object in the "audits" array must follow this schema:
     if (isAuditingProfile) return;
     setIsAuditingProfile(true);
 
+    // ⚡ Bolt: Hoist the baseName calculation outside the filter loop
+    // to avoid O(N) string splitting and allocations on every event.
+    const baseName = entity.name.split(' (')[0].toLowerCase();
+
     const relatedEvents = timelineEvents.filter(e => {
       if (!e.involved_records) return false;
-      const baseName = entity.name.split(' (')[0].toLowerCase();
       return e.involved_records.toLowerCase().includes(baseName);
     });
 
