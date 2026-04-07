@@ -974,9 +974,15 @@ export default function App() {
   // --- Handlers: Entities ---
   const handleUpdateEntity = (field, value) => {
     if (!selectedEntity) return;
-    setEntities(entities.map(e =>
-      e.id === selectedId ? { ...e, [field]: value } : e
-    ));
+    // ⚡ Bolt: Replace O(N) .map() iteration with faster .findIndex() + targeted mutation
+    // to reduce main thread blocking on every keystroke when editing entities.
+    setEntities(prev => {
+      const idx = prev.findIndex(e => e.id === selectedId);
+      if (idx === -1) return prev;
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], [field]: value };
+      return copy;
+    });
   };
 
   const createNewEntity = (type) => {
