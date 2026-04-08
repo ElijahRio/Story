@@ -4,7 +4,7 @@ import {
   Settings, Send, Trash2, Activity, FileWarning,
   Download, Upload, Search, Clock, GitCommit,
   Bug, CheckCircle, AlertTriangle, Bell, Calendar,
-  CornerDownRight, Fingerprint, HardDrive, BrainCircuit, GitMerge,
+  CornerDownRight, HardDrive, BrainCircuit, GitMerge,
   Check, X, Network, Route, Plus
 } from 'lucide-react';
 import ForceGraph2D from 'react-force-graph-2d';
