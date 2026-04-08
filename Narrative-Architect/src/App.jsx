@@ -657,7 +657,8 @@ export default function App() {
     return cache;
   }, [networkEmbeddings]);
 
-  // ⚡ Bolt: Cache text-based links per entity to prevent O(N^2) string matching on every network render
+  // ⚡ Bolt: Cache text-based links and entity references to skip expensive string
+  // concatenations and O(N^2) matching when neither the entity nor dictionary changed.
   const textLinksCacheRef = useRef({ namesHash: '', cache: new Map() });
 
   // --- Network Graph Computation ---
@@ -702,6 +703,17 @@ export default function App() {
     }
 
     entities.forEach(entity => {
+      // ⚡ Bolt: Use a per-entity cache to skip O(N) string concatenations and
+      // O(N^2) string matching if the entity hasn't changed.
+      let cachedEntry = cacheData.cache.get(entity.id);
+
+      if (cachedEntry && cachedEntry.entity === entity) {
+        for (let i = 0; i < cachedEntry.linkIds.length; i++) {
+          addLinkWeight(entity.id, cachedEntry.linkIds[i], 1.5, 'text');
+        }
+        return;
+      }
+
       // ⚡ Bolt: Replaced expensive array allocation and .filter(Boolean).join(' ')
       // with primitive string concatenation to improve performance and reduce GC overhead
       // during network graph rendering.
@@ -718,18 +730,19 @@ export default function App() {
       if (entity.ai_analysis) allText += entity.ai_analysis + ' ';
       if (allText.length > 0) allText = allText.slice(0, -1);
 
-      let cachedEntry = cacheData.cache.get(entity.id);
       if (cachedEntry && cachedEntry.text === allText) {
-        cachedEntry.linkIds.forEach(targetId => {
-          addLinkWeight(entity.id, targetId, 1.5, 'text');
-        });
+        // Entity object changed but relevant text is identical. Update ref and reuse links.
+        cachedEntry.entity = entity;
+        for (let i = 0; i < cachedEntry.linkIds.length; i++) {
+          addLinkWeight(entity.id, cachedEntry.linkIds[i], 1.5, 'text');
+        }
       } else {
         const links = getDetectedLinks(allText, entity.id);
         const linkIds = links.map(l => l.id);
-        cacheData.cache.set(entity.id, { text: allText, linkIds });
-        linkIds.forEach(targetId => {
-          addLinkWeight(entity.id, targetId, 1.5, 'text');
-        });
+        cacheData.cache.set(entity.id, { entity, text: allText, linkIds });
+        for (let i = 0; i < linkIds.length; i++) {
+          addLinkWeight(entity.id, linkIds[i], 1.5, 'text');
+        }
       }
     });
 
