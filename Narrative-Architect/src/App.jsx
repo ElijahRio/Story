@@ -297,7 +297,7 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState('all');
 
   // --- LLM State ---
-  const [llmUrl, setLlmUrl] = useState('http://localhost:11434/api/chat');
+  const [llmUrl, setLlmUrl] = useState(import.meta.env.VITE_LLM_URL || '');
   const [llmModel, setLlmModel] = useState('llama3');
   const [embedModel, setEmbedModel] = useState('nomic-embed-text');
   const [chatHistory, setChatHistory] = useState([
