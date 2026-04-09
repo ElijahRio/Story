@@ -1727,6 +1727,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
                 <button
                   onClick={handleComputeNetworkEmbeddings}
                   disabled={isComputingEmbeddings}
+                  aria-label="Calculate semantic similarities for the network graph"
                   title={isComputingEmbeddings ? "Computing vectors..." : "Calculate semantic similarities for the network graph"}
                   className="px-4 py-2 bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/50 rounded text-xs text-rose-400 uppercase tracking-widest disabled:opacity-50 transition-colors flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
                 >
@@ -2335,6 +2336,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               <button
                 onClick={handleRunAudit}
                 disabled={isAuditing}
+                aria-label="Run continuous integration audit"
                 title={isAuditing ? "Scanning timeline..." : "Run continuous integration audit"}
                 className="px-3 py-1.5 bg-rose-900/20 hover:bg-rose-900/40 border border-rose-800/50 rounded text-xs text-rose-400 uppercase tracking-widest disabled:opacity-50 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
               >
@@ -2423,6 +2425,7 @@ Output a structured, clinical text report. Use harsh, industrial, facility-appro
               <button
                 onClick={handleIngestRawText}
                 disabled={isIngesting || !ingestText.trim()}
+                aria-label="Initialize text extraction"
                 title={isIngesting ? "Extraction in progress..." : !ingestText.trim() ? "Waiting for text input" : "Initialize text extraction"}
                 className="flex items-center gap-2 px-6 py-2 bg-teal-900/40 hover:bg-teal-800/60 border border-teal-700 rounded text-xs uppercase tracking-widest text-teal-400 hover:text-teal-300 disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
               >

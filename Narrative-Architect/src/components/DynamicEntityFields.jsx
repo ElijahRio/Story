@@ -48,6 +48,7 @@ const AssetPersonnelFields = ({ selectedEntity, renderField, handleUpdateEntity,
         <button
           onClick={() => handleProfileAudit(selectedEntity)}
           disabled={isAuditingProfile}
+          aria-label="Run behavioral consistency audit"
           title={isAuditingProfile ? "Analysis in progress..." : "Run behavioral consistency audit"}
           className="px-3 py-1.5 bg-teal-950/30 hover:bg-teal-900/50 border border-teal-900/50 rounded text-[9px] uppercase tracking-widest text-teal-400 hover:text-teal-300 disabled:opacity-50 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
         >
