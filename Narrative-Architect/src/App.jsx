@@ -400,9 +400,16 @@ export default function App() {
 
   // ⚡ Bolt: Pre-process involved_records into arrays of lowercased strings to avoid repeated string splitting and toLowerCase calls in render
   const timelineEventsProcessed = useMemo(() => {
-    return timelineEvents.map(event => {
+    const len = timelineEvents.length;
+    const result = new Array(len);
+    for (let i = 0; i < len; i++) {
+      const event = timelineEvents[i];
       const safeRecords = safeString(event.involved_records);
-      if (!safeRecords) return { ...event, involvedNames: [], involvedNamesLower: [] };
+
+      if (!safeRecords) {
+        result[i] = { ...event, involvedNames: [], involvedNamesLower: [] };
+        continue;
+      }
 
       const parts = safeRecords.split(',');
       const pLen = parts.length;
@@ -415,12 +422,13 @@ export default function App() {
         involvedNamesLower[j] = trimmed.toLowerCase();
       }
 
-      return {
+      result[i] = {
         ...event,
         involvedNames,
         involvedNamesLower
       };
-    });
+    }
+    return result;
   }, [timelineEvents]);
 
   // ⚡ Bolt: Memoize the list of entities available for the Metro Timeline dropdown
@@ -450,7 +458,11 @@ export default function App() {
       }
     }
 
-    return entities.map(e => {
+    const len = entities.length;
+    const result = new Array(len);
+
+    for (let i = 0; i < len; i++) {
+      const e = entities[i];
       const cached = regexCacheRef.current.get(e.id);
       const fullName = safeString(e.name).toLowerCase();
 
@@ -458,7 +470,8 @@ export default function App() {
       // Returning `{ ...e, ...cached }` on every render causes O(N) new object allocations (often 2000+)
       // on every keystroke when typing in a single entity, causing massive GC pauses.
       if (cached && cached.nameLower === fullName && cached._entity === e) {
-        return cached._dictEntry;
+        result[i] = cached._dictEntry;
+        continue;
       }
 
       // Compile and cache new matchers if name changed or entity is new
@@ -486,8 +499,10 @@ export default function App() {
 
       regexCacheRef.current.set(e.id, compiledData);
 
-      return dictEntry;
-    });
+      result[i] = dictEntry;
+    }
+
+    return result;
   }, [entities, entitiesMap]);
 
   // --- Advanced Link Detection Engine ---
@@ -513,13 +528,19 @@ export default function App() {
     const cache = new Map();
     // Get all unique lowercased names used in all events
     const uniqueNames = new Set();
-    timelineEventsProcessed.forEach(event => {
-      event.involvedNamesLower.forEach(name => uniqueNames.add(name));
-    });
+    const lenEvents = timelineEventsProcessed.length;
+    for (let i = 0; i < lenEvents; i++) {
+      const event = timelineEventsProcessed[i];
+      const lenNames = event.involvedNamesLower.length;
+      for (let j = 0; j < lenNames; j++) {
+        uniqueNames.add(event.involvedNamesLower[j]);
+      }
+    }
 
     // Create an O(1) lookup map for exact matches
     const exactMatchMap = new Map();
-    for (let i = 0; i < entityLinkDictionary.length; i++) {
+    const lenDict = entityLinkDictionary.length;
+    for (let i = 0; i < lenDict; i++) {
       const entity = entityLinkDictionary[i];
       if (!exactMatchMap.has(entity.nameLower)) {
         exactMatchMap.set(entity.nameLower, entity);
@@ -527,14 +548,14 @@ export default function App() {
     }
 
     // Compute the match once for each unique name
-    uniqueNames.forEach(lowerName => {
+    for (const lowerName of uniqueNames) {
       // Fast path: Check persistent cache
       if (persistentMatchCacheRef.current.cache.has(lowerName)) {
          const cachedEntity = persistentMatchCacheRef.current.cache.get(lowerName);
          if (cachedEntity) {
             cache.set(lowerName, cachedEntity);
          }
-         return;
+         continue;
       }
 
       // Fast path: O(1) exact match lookup
@@ -544,9 +565,13 @@ export default function App() {
       // ⚡ Bolt: Only perform expensive O(N) partial matches if the fragment is reasonably long (>3 chars)
       // This prevents massive CPU bottlenecks when users type short strings like "the", "a", or "an"
       if (!foundEntity && lowerName.length > 3) {
-        foundEntity = entityLinkDictionary.find(e => {
-          return e.nameLower.includes(lowerName) || lowerName.includes(e.nameLower);
-        });
+        for (let i = 0; i < lenDict; i++) {
+          const e = entityLinkDictionary[i];
+          if (e.nameLower.includes(lowerName) || lowerName.includes(e.nameLower)) {
+            foundEntity = e;
+            break;
+          }
+        }
       }
 
       persistentMatchCacheRef.current.cache.set(lowerName, foundEntity || null);
@@ -554,7 +579,7 @@ export default function App() {
       if (foundEntity) {
         cache.set(lowerName, foundEntity);
       }
-    });
+    }
     return cache;
   }, [timelineEventsProcessed, entityLinkDictionary]);
 
