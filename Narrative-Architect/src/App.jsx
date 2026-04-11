@@ -665,12 +665,14 @@ export default function App() {
   useEffect(() => {
     if (selectedId !== 'network') return;
 
-    const nodes = entities.map(e => ({
-      id: e.id,
-      name: e.name,
-      type: e.type,
-      val: 2 // Node size
-    }));
+    // ⚡ Bolt: Optimize array iteration by pre-allocating the resulting array
+    // and using a standard for-loop to reduce memory expansion and callback overhead.
+    const entitiesLen = entities.length;
+    const nodes = new Array(entitiesLen);
+    for (let i = 0; i < entitiesLen; i++) {
+      const e = entities[i];
+      nodes[i] = { id: e.id, name: e.name, type: e.type, val: 2 }; // Node size
+    }
 
     const linksMap = new Map();
 
@@ -702,7 +704,9 @@ export default function App() {
       cacheData.namesHash = currentNamesHash;
     }
 
-    entities.forEach(entity => {
+    // ⚡ Bolt: Replace .forEach() with a standard for-loop to eliminate callback overhead.
+    for (let eIdx = 0; eIdx < entitiesLen; eIdx++) {
+      const entity = entities[eIdx];
       // ⚡ Bolt: Use a per-entity cache to skip O(N) string concatenations and
       // O(N^2) string matching if the entity hasn't changed.
       let cachedEntry = cacheData.cache.get(entity.id);
@@ -711,7 +715,7 @@ export default function App() {
         for (let i = 0; i < cachedEntry.linkIds.length; i++) {
           addLinkWeight(entity.id, cachedEntry.linkIds[i], 1.5, 'text');
         }
-        return;
+        continue;
       }
 
       // ⚡ Bolt: Replaced expensive array allocation and .filter(Boolean).join(' ')
@@ -738,13 +742,18 @@ export default function App() {
         }
       } else {
         const links = getDetectedLinks(allText, entity.id);
-        const linkIds = links.map(l => l.id);
+        // ⚡ Bolt: Replace .map() with a pre-allocated array and a for-loop.
+        const linksLen = links.length;
+        const linkIds = new Array(linksLen);
+        for (let i = 0; i < linksLen; i++) {
+          linkIds[i] = links[i].id;
+        }
         cacheData.cache.set(entity.id, { entity, text: allText, linkIds });
-        for (let i = 0; i < linkIds.length; i++) {
+        for (let i = 0; i < linksLen; i++) {
           addLinkWeight(entity.id, linkIds[i], 1.5, 'text');
         }
       }
-    });
+    }
 
     // 2. Semantic References (read from pre-computed cache)
     if (semanticLinksCache.size > 0) {
