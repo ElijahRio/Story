@@ -491,15 +491,6 @@ export default function App() {
   }, [entities, entitiesMap]);
 
   // --- Advanced Link Detection Engine ---
-  // ⚡ Bolt: Compute global validation hash once per render.
-  // This string joining is O(N) and prevents doing it inside `getDetectedLinks` which would be O(N^2).
-  const globalNamesHash = useMemo(() => {
-    let hash = '';
-    for (let i = 0; i < entityLinkDictionary.length; i++) {
-        hash += entityLinkDictionary[i].name + '|';
-    }
-    return hash;
-  }, [entityLinkDictionary]);
 
   const persistentMatchCacheRef = useRef({ dictRef: null, cache: new Map() });
 
@@ -561,16 +552,16 @@ export default function App() {
   // ⚡ Bolt: Added a useRef cache.
   // Caches the resulting array iteration per entity ID based on their current text.
   // Prevents memory leak by only storing the *current* state of the text for that entity.
-  const detectedLinksCacheRef = useRef({ hash: '', cache: new Map() });
+  const detectedLinksCacheRef = useRef({ dictRef: null, cache: new Map() });
 
   // Memoized so it can be safely included in dependency arrays
   const getDetectedLinks = React.useCallback((text, currentId) => {
     const safeText = safeString(text);
     if (!safeText) return [];
 
-    if (detectedLinksCacheRef.current.hash !== globalNamesHash) {
+    if (detectedLinksCacheRef.current.dictRef !== entityLinkDictionary) {
         detectedLinksCacheRef.current.cache.clear();
-        detectedLinksCacheRef.current.hash = globalNamesHash;
+        detectedLinksCacheRef.current.dictRef = entityLinkDictionary;
     }
 
     // ⚡ Bolt: Store a nested Map per entity ID to cache multiple text fields simultaneously.
@@ -614,7 +605,7 @@ export default function App() {
 
     entityCache.set(safeText, result);
     return result;
-  }, [entityLinkDictionary, globalNamesHash]);
+  }, [entityLinkDictionary]);
 
   // ⚡ Bolt: Extract O(N^2) semantic similarity loop into a separate useMemo
   // This prevents recalculating cosine similarity for all pairs on every keystroke

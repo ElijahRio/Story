@@ -19,3 +19,7 @@
 ## 2024-06-03 - Memoize timeline entity loose matches
 **Learning:** Computing partial/loose match resolutions for strings during `useMemo` hooks mapping arrays (like `timelineEntityMatchCache`) can still be slow if the operations aren't persisted across renders, resulting in O(N*M) CPU bottlenecks during React re-renders when other derived state updates.
 **Action:** Utilize a `useRef` based persistent mapping to cache intermediate resolution mapping states in order to avoid repeating O(N) Array.find lookups for loose matches over multiple render cycles.
+
+## 2025-02-28 - Optimize Cache Invalidation in useMemo
+**Learning:** In a highly iterated cache invalidation step inside a `useMemo` (like checking `globalNamesHash`), doing a full O(N) string joining calculation (`hash += entityLinkDictionary[i].name + '|'`) just to verify if the list has changed is incredibly slow.
+**Action:** When determining if a large dependency array/list has been updated, utilize referential equality checks using `useRef` directly against the array object (`ref.current !== arrayObject`) rather than manually concatenating strings into a hash. This turns an O(N) memory allocation operation into an O(1) comparison.
