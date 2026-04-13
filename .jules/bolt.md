@@ -19,3 +19,6 @@
 ## 2024-06-03 - Memoize timeline entity loose matches
 **Learning:** Computing partial/loose match resolutions for strings during `useMemo` hooks mapping arrays (like `timelineEntityMatchCache`) can still be slow if the operations aren't persisted across renders, resulting in O(N*M) CPU bottlenecks during React re-renders when other derived state updates.
 **Action:** Utilize a `useRef` based persistent mapping to cache intermediate resolution mapping states in order to avoid repeating O(N) Array.find lookups for loose matches over multiple render cycles.
+## 2025-02-28 - Optimize array iteration methods in useMemo hooks
+**Learning:** In highly-executed `useMemo` hooks (such as `timelineEventsProcessed`, `entityLinkDictionary`, and `timelineEntityMatchCache`), chained array iteration methods like `.map()`, `.forEach()`, and `.find()` create a massive amount of intermediate array allocations and execute callbacks `N` times, drastically blocking the main thread and leading to large GC pauses during typing or state updates.
+**Action:** Replace functional array iteration methods with manual `for` loops and `for...of` loops, and aggressively pre-allocate array dimensions (`new Array(length)`) whenever the exact final size is known. This eliminates callback overhead and intermediate object allocation.
