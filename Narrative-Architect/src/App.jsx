@@ -1383,7 +1383,7 @@ You MUST output strictly a JSON object with a key "entities" containing an array
 
 Each object in the "entities" array must strictly follow this schema:
 {
-  "id": "e-auto-[generate random 5 digit number]",
+  "id": "e-auto-[generate a unique UUID]",
   "type": "asset" | "personnel" | "technology" | "anomaly" | "event",
   "name": "[Extracted Name]",
   "description": "[Clinical summary of the entity or event]",
@@ -1487,7 +1487,7 @@ You MUST output strictly a JSON object with a key "audits" containing an array o
 
 Each object in the "audits" array must follow this schema:
 {
-  "id": "audit-[random 5 digit number]",
+  "id": "audit-[generate a unique UUID]",
   "severity": "CRITICAL" | "WARNING" | "NOTE",
   "target": "[Name of the Entity or Event with the issue]",
   "issue": "[A highly clinical, precise description of the logical gap or missing variable]"
